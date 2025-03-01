@@ -59,7 +59,7 @@ export default function ProductCard({
                 <Box
                     sx={{
                         width: "100%",
-                        height: 100,
+                        height: 200,
                         background: "linear-gradient(135deg, #FFA726 50%, #FFF 50%)",
                     }}
                 />
@@ -68,14 +68,15 @@ export default function ProductCard({
                 <Box
                     sx={{
                         position: "absolute",
-                        top: 16,
+                        top: 35,
                         left: 16,
                         px: 2,
                         py: 1,
                         background: "linear-gradient(135deg, #FFA726, #FF7043)",
-                        borderRadius: 4,
+                        borderRadius: 2,
                         color: "#fff",
                         boxShadow: 2,
+                        zIndex: '2'
                     }}
                 >
                     <Typography variant="body1" sx={{ fontWeight: "bold" }}>
@@ -86,8 +87,8 @@ export default function ProductCard({
                 {/* Circular product image */}
                 <Box
                     sx={{
-                        width: 180,
-                        height: 180,
+                        width: 200,
+                        height: 200,
                         borderRadius: "50%",
                         backgroundColor: "#fff",
                         overflow: "hidden",
@@ -142,7 +143,7 @@ export default function ProductCard({
                     <Typography
                         variant="body2"
                         sx={{
-                            textAlign: "left",
+                            textAlign: "center",
                             color: "#666",
                             m: 1,
                             maxWidth: "85%",
@@ -151,6 +152,7 @@ export default function ProductCard({
                         {/* Example description—replace or remove as needed */}
                         Kratki opis proizvoda može ići ovde.
                     </Typography>
+
                 </CardContent>
             </CardActionArea>
 
