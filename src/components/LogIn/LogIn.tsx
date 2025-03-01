@@ -21,6 +21,7 @@ const LoginPage = () => {
     formState: { errors },
   } = useForm<LoginFormData>();
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+  const [inputEmail, setInputEmail] = useState<string>('')
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -71,13 +72,13 @@ const LoginPage = () => {
   };
 
   const handleForgotPassword = async () => {
-    if (!errors.email) {
+    if (!inputEmail) {
       toast.error("Molimo vas da unesete email pre resetovanja lozinke.");
       return;
     }
 
     try {
-      await sendPasswordResetEmail(auth, errors.email.message || "");
+      await sendPasswordResetEmail(auth, inputEmail);
       toast.success("E-mail za resetovanje lozinke je poslat!");
     } catch (error) {
       if (error instanceof Error) {
@@ -99,6 +100,7 @@ const LoginPage = () => {
             className="login-input"
             placeholder="Unesite email adresu"
             {...register("email", { required: "Unesite E-mail" })}
+            onChange={(e) => setInputEmail(e.target.value)}
           />
           {errors.email && <span className="error">{errors.email.message}</span>}
         </div>
