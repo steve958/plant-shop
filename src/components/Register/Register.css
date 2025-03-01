@@ -1,0 +1,118 @@
+.register-container {
+  min-height: calc(100vh - 369px);
+  ;
+  width: 100%;
+  background-color: #f9f9f9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.register-form {
+  width: 100%;
+  max-width: 700px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  padding: 30px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-sizing: border-box;
+}
+
+/* Title styling */
+.register-title {
+  font-size: 1.8rem;
+  text-align: center;
+  margin: 0;
+  color: #333;
+}
+
+/* Main wrapper for inputs */
+.inputs-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Each row for grouping two fields horizontally */
+.register-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  /* ensures wrapping on small screens */
+}
+
+/* Input wrapper for each field */
+.register-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 6px;
+}
+
+.register-input-wrapper label {
+  font-size: 0.95rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.register-input {
+  height: 40px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease;
+}
+
+.register-input:focus {
+  outline: none;
+  border-color: #54c143;
+}
+
+/* Error message styling */
+.error {
+  color: #d86a6a;
+  font-size: 0.85rem;
+}
+
+/* Submit button */
+.register-page-button {
+  align-self: center;
+  margin-top: 10px;
+  padding: 10px 20px;
+  background-color: #54c143;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.register-page-button:hover {
+  background-color: #46a832;
+}
+
+/* Responsive breakpoints */
+@media (max-width: 576px) {
+  .register-form {
+    padding: 20px;
+  }
+
+  .register-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+@media (min-width: 577px) and (max-width: 991px) {
+  .register-form {
+    max-width: 500px;
+  }
+}

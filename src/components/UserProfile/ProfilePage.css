@@ -1,0 +1,190 @@
+.profile-container {
+  min-height: 80vh;
+  width: 100%;
+  display: flex;
+
+  align-items: center;
+  padding: 50px;
+  background-color: #ffffff8e;
+  flex-direction: column;
+}
+
+.profile-content {
+  min-height: 500px;
+  width: 800px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.6);
+  border-radius: 10px;
+  background-color: white;
+  padding: 30px;
+}
+
+.show-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.edit-profile-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.show-profile-button-wrapper {
+  display: flex;
+  gap: 20px;
+  padding: 10px;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.edit-button {
+  height: 40px;
+  background-color: #54C143;
+  width: 90px;
+  border-radius: 5px;
+  border: none;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
+  padding: 5px;
+}
+
+.edit-button:hover {
+  background-color: #09e0b5;
+  cursor: pointer;
+}
+
+.logout-button {
+  height: 40px;
+  background-color: white;
+  width: 90px;
+  border-radius: 5px;
+  border: none;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
+}
+
+.logout-button:hover {
+  background-color: rgb(206, 206, 206);
+  cursor: pointer;
+}
+
+.loader-wrapper {
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-profile-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  width: 100%;
+  gap: 10px;
+  padding: 10px;
+}
+
+.edit-profile-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.edit-profile-input-wrapper input {
+  height: 30px;
+  font-size: 16px !important;
+  border-radius: 5px;
+  background-color: #dafff8;
+  border: none;
+  padding: 5px;
+}
+
+.edit-button-wrapper {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 10px;
+}
+
+.save-button {
+  height: 40px;
+  background-color: #54C143;
+  width: 90px;
+  border-radius: 5px;
+  border: none;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
+}
+
+.save-button:hover {
+  background-color: #09e0b5;
+  cursor: pointer;
+}
+
+.cancel-button {
+  height: 40px;
+  background-color: white;
+  width: 90px;
+  border-radius: 5px;
+  border: none;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
+}
+
+.cancel-button:hover {
+  background-color: rgb(206, 206, 206);
+  cursor: pointer;
+}
+
+/* Za vrlo male uređaje (telefoni, manje od 576px) */
+@media (max-width: 575.98px) {
+  .profile-container {
+    min-height: 100vw;
+  }
+
+  .profile-content {
+    width: 330px;
+  }
+}
+
+/* Za male uređaje (telefoni u portret modu, 576px i više) */
+@media (min-width: 576px) and (max-width: 767.98px) {
+  .profile-content {
+    width: 350px;
+  }
+}
+
+/* Za srednje uređaje (tableti, 768px i više) */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .profile-container {
+    min-height: 90vw;
+  }
+
+  .profile-content {
+    width: 500px;
+  }
+}
+
+/* Za velike uređaje (veći tableti ili mali laptopovi, 992px i više) */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+  .profile-container {
+    min-height: 70vw;
+  }
+}
+
+/* Za vrlo velike uređaje (desktop računari, 1200px i više) */
+@media (min-width: 1200px) and (max-width: 1400px) {
+  .profile-container {
+    min-height: 60vw;
+  }
+}

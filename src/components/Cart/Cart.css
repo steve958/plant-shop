@@ -1,0 +1,172 @@
+/* Overall cart container */
+.cart-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    background-color: #f5f5f5;
+    min-height: 75vh;
+    box-sizing: border-box;
+}
+
+/* Title styling */
+.cart-container h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+/* Cart items wrapper */
+.cart-items-wrapper {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Each cart item styled as a card */
+.cart-item {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    gap: 20px;
+    transition: transform 0.2s ease;
+}
+
+.cart-item:hover {
+    transform: translateY(-3px);
+}
+
+.cart-item img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+/* Details inside each cart item */
+.cart-item-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.cart-item-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0;
+    color: #333;
+}
+
+.cart-item-quantity {
+    font-size: 1rem;
+    color: #555;
+    margin: 0;
+}
+
+.cart-item-price {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #54c143;
+    margin: 0;
+}
+
+/* Delete button */
+.cart-delete-button {
+    cursor: pointer;
+    color: #e53935;
+}
+
+/* Total price container */
+.total-price-container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.total-price-container h4 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.total-price-container h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #54c143;
+    font-weight: 700;
+}
+
+/* Buttons container */
+.cart-button-wrapper {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 1200px;
+    margin-top: 20px;
+}
+
+/* Home button */
+.to-home-button {
+    background-color: #fff !important;
+    color: #333 !important;
+    border: 1px solid #ccc;
+    padding: 12px 20px;
+    border-radius: 8px;
+    text-transform: none;
+    font-size: 1rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease;
+}
+
+.to-home-button:hover {
+    background-color: #e0e0e0 !important;
+}
+
+/* Order button */
+.order-button {
+    background-color: #54c143 !important;
+    color: #fff !important;
+    padding: 12px 20px;
+    border-radius: 8px;
+    text-transform: none;
+    font-size: 1rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease;
+}
+
+.order-button:hover {
+    background-color: #46a832 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .cart-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .cart-item img {
+        width: 100%;
+        max-width: 300px;
+        height: auto;
+    }
+
+    .cart-button-wrapper {
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+    }
+}

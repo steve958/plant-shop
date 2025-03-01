@@ -1,0 +1,65 @@
+.home-page-container {
+    min-height: calc(100vh - 369px);
+    width: 100%;
+    padding: 50px;
+    background-color: #ffffff8e;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.home-page-wrapper {
+    display: flex;
+    gap: 20px;
+}
+
+/* Unified Sidebar containing both Sort and Filter */
+.sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.sort-filter-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Main content area */
+.home-main-content {
+    flex-grow: 1;
+}
+
+/* Grid for products */
+.home-products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(285px, 1fr));
+    gap: 20px;
+    justify-content: center;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Responsive: On small screens, stack sidebar above main content */
+@media (max-width: 768px) {
+    .home-page-wrapper {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .sidebar {
+        width: 100%;
+        max-width: 400px;
+        margin-bottom: 20px;
+    }
+
+    .home-main-content {
+        width: 100%;
+    }
+}

@@ -1,0 +1,81 @@
+/* Use a solid black background with ample padding and high contrast white text */
+.footer-container {
+  background: #000;
+  color: #fff;
+  padding: 40px 20px;
+  margin-top: 15px;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Use flex layout with space between sections and a gap for readability */
+.footer-content {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 50px;
+}
+
+/* Ensure each section has a minimum width and consistent spacing */
+.footer-section {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Headings styling */
+.footer-section h3 {
+  margin-bottom: 10px;
+  font-size: 1.2rem;
+}
+
+/* Paragraph and link styling for readability */
+.footer-section p,
+.footer-section a {
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* Social icons styling with circular background and hover effects */
+.footer-section span a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-right: 10px;
+  color: #fff;
+  background: #333;
+  border-radius: 50%;
+  transition: background 0.3s ease;
+}
+
+.footer-section span a:hover {
+  background: #555;
+}
+
+/* Footer bottom section with a divider and smaller text */
+.footer-bottom {
+  margin-top: 20px;
+  text-align: center;
+  border-top: 1px solid #444;
+  padding-top: 10px;
+  font-size: 0.8rem;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+  .footer-content {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .footer-section {
+    align-items: center;
+    text-align: center;
+  }
+
+  .footer-section span a {
+    margin-right: 5px;
+  }
+}

@@ -1,0 +1,140 @@
+/* Container for the entire login page */
+.login-page-container {
+  min-height: calc(100vh - 369px);
+  width: 100%;
+  background-color: #f9f9f9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Form styling */
+.login-page-form {
+  width: 100%;
+  max-width: 400px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  padding: 30px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-sizing: border-box;
+}
+
+/* Title styling */
+.login-title {
+  font-size: 1.8rem;
+  text-align: center;
+  margin: 0;
+  color: #333;
+}
+
+/* Wrapper for individual input fields */
+.login-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.login-input-wrapper label {
+  font-size: 0.95rem;
+  color: #555;
+  font-weight: 500;
+}
+
+/* Shared input styling */
+.login-input {
+  height: 40px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease;
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: #54c143;
+}
+
+/* Error message styling */
+.error {
+  color: #d86a6a;
+  font-size: 0.85rem;
+  margin-top: -4px;
+}
+
+/* Forgot password link */
+.forgot-password-link {
+  color: #54c143;
+  text-align: right;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.forgot-password-link:hover {
+  color: #333;
+}
+
+/* Buttons wrapper */
+.login-button-wrapper {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+/* Primary login button */
+.login-button {
+  flex: 1;
+  margin-right: 10px;
+  height: 40px;
+  border: none;
+  border-radius: 6px;
+  background-color: #54c143;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.login-button:hover {
+  background-color: #46a832;
+}
+
+/* Secondary register button */
+.register-button {
+  flex: 1;
+  height: 40px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #fff;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.register-button:hover {
+  background-color: #eee;
+  color: #000;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 576px) {
+  .login-page-form {
+    max-width: 95%;
+    padding: 20px;
+  }
+}
+
+@media (min-width: 576px) and (max-width: 991px) {
+  .login-page-form {
+    max-width: 450px;
+  }
+}
