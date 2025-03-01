@@ -1,3 +1,4 @@
+import "./SubCategory.css";
 import { useEffect, useState, useMemo } from "react";
 import { db } from "../firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
@@ -9,7 +10,6 @@ import Filter from "../Filter/Filter";
 import { useSelector } from "react-redux";
 import { RootState } from "../Redux/store";
 import ProductCard from "../ProductCard/ProductCard";
-import "./SubCategory.css";
 
 type Product = {
     productId: string;
