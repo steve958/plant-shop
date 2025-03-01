@@ -133,7 +133,7 @@ export default function SubCategoryPage() {
                                 }}
                             >
                                 {sortedProducts.map((product) => (
-                                    <Box key={product.productId} sx={{ width: 345 }}>
+                                    <Box key={product.productId}>
                                         <ProductCard
                                             product={product}
                                             onClick={handleProductClick}

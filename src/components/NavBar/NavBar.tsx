@@ -159,10 +159,15 @@ export default function NavBar() {
               key={index}
               className="nav-item"
               onMouseEnter={() => {
+                // Open dropdown on hover if sub-items exist
                 if (item.subItems.length > 0) setActiveDropdown(item.label);
               }}
+              onMouseLeave={() => {
+                // Close dropdown when the mouse leaves this nav item
+                setActiveDropdown(null);
+              }}
               onClick={() => {
-                // For items without sub-categories, navigate immediately
+                // If no sub-categories, navigate immediately
                 if (item.subItems.length === 0) handleNavigate(item.route);
               }}
             >

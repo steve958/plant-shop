@@ -75,7 +75,7 @@ export default function AdminPanel() {
       }
     };
 
-    fetchProducts();
+    if (!refreshProducts) fetchProducts();
   }, [refreshProducts]);
 
   // ---------- Handlers ----------
