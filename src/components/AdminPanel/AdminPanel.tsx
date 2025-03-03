@@ -1,24 +1,26 @@
-import { useEffect, useState, useMemo } from "react";
-import { db, storage } from "../firebase";
+import { useEffect, useState, useMemo } from 'react';
+import { db, storage } from '../firebase';
 import {
   collection,
   getDocs,
   doc,
   deleteDoc,
   updateDoc,
-} from "firebase/firestore";
-import { ref, deleteObject } from "firebase/storage";
-import "./AdminPanel.css";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
-import AddItemModal from "../Modals/NewItemModal";
-import DeleteIcon from "@mui/icons-material/Delete";
-import Tooltip from "@mui/material/Tooltip";
-import { ScaleLoader } from "react-spinners";
-import EditItemModal from "../Modals/EditItemModal";
-import Filter from "../Filter/Filter";
-import Sort from "../Sort/Sort";
-import { useSelector } from "react-redux";
-import { RootState } from "../Redux/store";
+} from 'firebase/firestore';
+import { ref, deleteObject } from 'firebase/storage';
+import './AdminPanel.css';
+import AddCircleIcon from '@mui/icons-material/AddCircle';
+import AddItemModal from '../Modals/NewItemModal';
+import DeleteIcon from '@mui/icons-material/Delete';
+import Tooltip from '@mui/material/Tooltip';
+import { ScaleLoader } from 'react-spinners';
+import EditItemModal from '../Modals/EditItemModal';
+import Filter from '../Filter/Filter';
+import Sort from '../Sort/Sort';
+import { useSelector } from 'react-redux';
+import { RootState } from '../Redux/store';
+import CheckIcon from '@mui/icons-material/Check';
+import { Button, Dialog, DialogContent, DialogActions } from '@mui/material';
 
 type Product = {
   productId: string;
@@ -27,55 +29,71 @@ type Product = {
   category: string;
   subcategory: string;
   manufacturer: string;
-  gender: "male" | "female";
+  gender: 'male' | 'female';
   size: string[];
   price: number;
   images: string[];
   description: string;
+  onDiscount?: boolean;
+  discountPrice?: number;
 };
 
 export default function AdminPanel() {
-  const [newItemClicked, setNewItemClicked] = useState<boolean>(false);
+  const [newItemClicked, setNewItemClicked] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number[]>([]);
-  const [refreshProducts, setRefreshProducts] = useState<boolean>(false);
-  const [deletingProductId, setDeletingProductId] = useState<string | null>(
-    null
-  );
-  const [editItemClicked, setEditItemClicked] = useState<boolean>(false);
+
+  // If true, triggers a fresh product fetch
+  const [refreshProducts, setRefreshProducts] = useState(false);
+
+  const [editItemClicked, setEditItemClicked] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // Filter and sort states
-  const [manufacturerFilter, setManufacturerFilter] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<string>("nameAsc");
+  // Confirmation modal for deletion
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    productId: string;
+    images: string[];
+  } | null>(null);
 
+  // Filter/Sort states
+  const [manufacturerFilter, setManufacturerFilter] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState('nameAsc');
   const searchQuery = useSelector((state: RootState) => state.search.query);
 
-  // ---------- Data fetching and refresh ----------
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      try {
-        const productsCollection = collection(db, "products");
-        const productSnapshot = await getDocs(productsCollection);
-        const productList = productSnapshot.docs.map((doc) => {
-          const data = doc.data() as Omit<Product, "productId">;
-          return { productId: doc.id, ...data };
-        });
-        setProducts(productList);
-        setFilteredProducts(productList);
-        setSelectedImageIndex(Array(productList?.length).fill(0));
-      } catch (error) {
-        console.error("Error fetching products: ", error);
-      } finally {
-        setLoading(false);
-        setRefreshProducts(false);
-      }
-    };
+  // ---------- Data Fetch Logic ----------
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const productsCollection = collection(db, 'products');
+      const productSnapshot = await getDocs(productsCollection);
+      const productList = productSnapshot.docs.map((doc) => {
+        const data = doc.data() as Omit<Product, 'productId'>;
+        return { productId: doc.id, ...data };
+      });
+      setProducts(productList);
+      setFilteredProducts(productList);
+      setSelectedImageIndex(Array(productList.length).fill(0));
+    } catch (error) {
+      console.error('Error fetching products: ', error);
+    } finally {
+      setLoading(false);
+      setRefreshProducts(false); // Once fetch is done, we reset
+    }
+  };
 
-    if (!refreshProducts) fetchProducts();
+  // 1) Initial fetch on mount
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  // 2) Re-fetch if refreshProducts becomes true
+  useEffect(() => {
+    if (refreshProducts) {
+      fetchProducts();
+    }
   }, [refreshProducts]);
 
   // ---------- Handlers ----------
@@ -85,13 +103,7 @@ export default function AdminPanel() {
 
   const handleCloseAddItemModal = () => {
     setNewItemClicked(false);
-    setRefreshProducts(true);
-  };
-
-  const handleCloseEditItemModal = () => {
-    setEditItemClicked(false);
-    setSelectedProduct(null);
-    setRefreshProducts(true);
+    setRefreshProducts(true); // Trigger re-fetch after adding a product
   };
 
   const handleEditItemClick = (product: Product) => {
@@ -99,7 +111,13 @@ export default function AdminPanel() {
     setEditItemClicked(true);
   };
 
-  // ---------- Image selection and rearrangement ----------
+  const handleCloseEditItemModal = () => {
+    setEditItemClicked(false);
+    setSelectedProduct(null);
+    setRefreshProducts(true); // Re-fetch after editing
+  };
+
+  // Update main image
   const handleImageSelect = async (
     productIndex: number,
     imageIndex: number
@@ -114,23 +132,35 @@ export default function AdminPanel() {
     newImages.unshift(selectedImage);
 
     try {
-      const productRef = doc(db, "products", selectedProductId);
+      const productRef = doc(db, 'products', selectedProductId);
       await updateDoc(productRef, { images: newImages });
     } catch (error) {
-      console.error("Error updating product images: ", error);
+      console.error('Error updating product images:', error);
     }
   };
 
-  // ---------- Delete ----------
-  const deleteProduct = async (
+  // Confirm Deletion
+  const openDeleteModal = (
     event: React.MouseEvent<SVGSVGElement>,
     productId: string,
     images: string[]
   ) => {
     event.stopPropagation();
+    setDeleteTarget({ productId, images });
+    setDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModalOpen(false);
+    setDeleteTarget(null);
+  };
+
+  // Final Deletion
+  const handleDeleteConfirmed = async () => {
+    if (!deleteTarget) return;
+    const { productId, images } = deleteTarget;
     try {
-      setDeletingProductId(productId);
-      const productDocRef = doc(db, "products", productId);
+      const productDocRef = doc(db, 'products', productId);
       await deleteDoc(productDocRef);
 
       const deleteImagePromises = images.map((image) => {
@@ -141,68 +171,65 @@ export default function AdminPanel() {
 
       setProducts((prev) => prev.filter((p) => p.productId !== productId));
     } catch (error) {
-      console.error("Error deleting product: ", error);
+      console.error('Error deleting product:', error);
     } finally {
-      setDeletingProductId(null);
+      closeDeleteModal();
     }
   };
 
-  // ---------- Utility ----------
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("sr-RS", {
-      style: "currency",
-      currency: "RSD",
+  // Utility: Format price
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat('sr-RS', {
+      style: 'currency',
+      currency: 'RSD',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(price);
-  };
 
-  // ---------- Filtering and Sorting ----------
+  // ---------- Filtering & Sorting ----------
   const filteredData = useMemo(() => {
-    // 1. Apply search filter
     let updated = products.filter((p) =>
       p.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
-    // 2. Apply manufacturer filter
     if (manufacturerFilter.length > 0) {
-      updated = updated.filter((p) => manufacturerFilter.includes(p.manufacturer));
+      updated = updated.filter((p) =>
+        manufacturerFilter.includes(p.manufacturer)
+      );
     }
     return updated;
   }, [products, searchQuery, manufacturerFilter]);
 
   const sortedData = useMemo(() => {
     const sorted = [...filteredData];
-    if (sortBy === "nameAsc") {
+    if (sortBy === 'nameAsc') {
       sorted.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (sortBy === "nameDesc") {
+    } else if (sortBy === 'nameDesc') {
       sorted.sort((a, b) => b.name.localeCompare(a.name));
-    } else if (sortBy === "priceAsc") {
+    } else if (sortBy === 'priceAsc') {
       sorted.sort((a, b) => a.price - b.price);
-    } else if (sortBy === "priceDesc") {
+    } else if (sortBy === 'priceDesc') {
       sorted.sort((a, b) => b.price - a.price);
     }
     return sorted;
   }, [filteredData, sortBy]);
 
-  // Update filteredProducts state to reflect final sorted data
+  // Update displayed products
   useEffect(() => {
     setFilteredProducts(sortedData);
   }, [sortedData]);
 
-  // ---------- Filter / Sort event handlers ----------
+  // ---------- Event handlers for Filter/Sort ----------
   const handleSortChange = (sortOption: string) => {
     setSortBy(sortOption);
   };
 
   const handleFilterChange = (filters: { manufacturers: string[] }) => {
-    // In AdminPanel, we only track manufacturerFilter for now,
-    // but you can expand if needed.
     setManufacturerFilter(filters.manufacturers);
   };
 
   return (
     <div className="admin-panel-container">
-      {/* Modals */}
+      {/* Add / Edit Modals */}
       {newItemClicked && <AddItemModal onClose={handleCloseAddItemModal} />}
       {editItemClicked && selectedProduct && (
         <EditItemModal
@@ -211,7 +238,22 @@ export default function AdminPanel() {
         />
       )}
 
-      {/* Left Sidebar: Sort & Filter in a single wrapper */}
+      {/* Confirmation Dialog */}
+      <Dialog open={deleteModalOpen} onClose={closeDeleteModal}>
+        <DialogContent>
+          Da li ste sigurni da želite da obrišete ovaj proizvod?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDeleteModal} color="inherit">
+            Odustani
+          </Button>
+          <Button onClick={handleDeleteConfirmed} color="error">
+            Obriši
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Sidebar */}
       <div className="admin-sidebar">
         <div className="admin-sort-filter-wrapper">
           <Sort onSortChange={handleSortChange} />
@@ -219,91 +261,88 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      {/* Main Content: Product list */}
+      {/* Main Area */}
       <div className="admin-main-content">
-        <div className="product-list">
-          {/* Add Product Card */}
-          <div className="add-item-card" onClick={handleNewItemClicked}>
-            <AddCircleIcon className="add-icon" sx={{ fontSize: 80 }} />
-          </div>
-
-          {loading ? (
-            <div className="loader">
-              <ScaleLoader color="#54C143" />
-            </div>
-          ) : filteredProducts.length > 0 ? (
-            filteredProducts.map((product, index) => (
-              <div
-                key={product.productId}
-                className="product-card"
-                onClick={() => handleEditItemClick(product)}
-              >
-                <div className="product-image-container">
-                  {product.images && product.images.length > 0 ? (
-                    <img
-                      src={product.images[selectedImageIndex[index]]}
-                      alt={`Product image ${selectedImageIndex[index] + 1}`}
-                      className="product-image"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <p>Nema dostupnih slika.</p>
-                  )}
-                </div>
-                {/* Thumbnails */}
-                <div className="image-selector">
-                  {product.images.map((image, imageIndex) => (
-                    <img
-                      key={imageIndex}
-                      src={image}
-                      alt={`Thumbnail ${imageIndex + 1}`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleImageSelect(index, imageIndex);
-                      }}
-                      className={`thumbnail ${selectedImageIndex[index] === imageIndex ? "selected" : ""
-                        }`}
-                      loading="lazy"
-                    />
-                  ))}
-                </div>
-                <Tooltip
-                  title={product.name}
-                  arrow
-                  placement="bottom"
-                  componentsProps={{
-                    tooltip: {
-                      sx: {
-                        fontSize: "0.75rem",
-                        bgcolor: "#fff",
-                        color: "black",
-                        p: 1,
-                        border: "1px solid black",
-                      },
-                    },
-                  }}
-                >
-                  <div className="item-title">{product.name}</div>
-                </Tooltip>
-                <div className="price-icon-wrapper">
-                  <p>{formatPrice(product.price)}</p>
-                  <DeleteIcon
-                    onClick={(event) =>
-                      !deletingProductId &&
-                      deleteProduct(event, product.productId, product.images)
-                    }
-                    className="delete-icon"
-                    style={{
-                      cursor: deletingProductId ? "not-allowed" : "pointer",
-                    }}
-                  />
-                </div>
-              </div>
-            ))
-          ) : (
-            <p>Nema proizvoda za prikaz.</p>
-          )}
+        <div className="add-product-button" onClick={handleNewItemClicked}>
+          <AddCircleIcon sx={{ fontSize: 40 }} />
+          <span>Dodaj Proizvod</span>
         </div>
+
+        {loading ? (
+          <div className="loader">
+            <ScaleLoader color="#54C143" />
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <p>Nema proizvoda za prikaz.</p>
+        ) : (
+          <div className="table-container">
+            <table className="product-table">
+              <thead>
+                <tr>
+                  <th>Naziv</th>
+                  <th>Kategorija</th>
+                  <th>Podkategorija</th>
+                  <th>Cena</th>
+                  <th>Na popustu</th>
+                  <th>Slike</th>
+                  <th>Akcija</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredProducts.map((product, index) => (
+                  <tr
+                    key={product.productId}
+                    onClick={() => handleEditItemClick(product)}
+                    className="product-row"
+                  >
+                    <td>{product.name}</td>
+                    <td>{product.category}</td>
+                    <td>{product.subcategory}</td>
+                    <td>{formatPrice(product.price)}</td>
+                    <td>
+                      {product.onDiscount ? (
+                        <CheckIcon style={{ color: 'green' }} />
+                      ) : null}
+                    </td>
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <div className="images-wrapper">
+                        <div className="thumbnails-row">
+                          {product.images.map((img, imgIndex) => (
+                            <img
+                              key={imgIndex}
+                              src={img}
+                              alt={`Image ${imgIndex + 1}`}
+                              className={`thumbnail ${
+                                imgIndex === 0 ? 'main-image' : ''
+                              } ${
+                                selectedImageIndex[index] === imgIndex
+                                  ? 'selected'
+                                  : ''
+                              }`}
+                              onClick={() => handleImageSelect(index, imgIndex)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </td>
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <DeleteIcon
+                        className="delete-icon"
+                        onClick={(event) =>
+                          openDeleteModal(
+                            event,
+                            product.productId,
+                            product.images
+                          )
+                        }
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

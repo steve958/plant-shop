@@ -1,13 +1,17 @@
-import { useForm } from "react-hook-form";
-import { auth, db } from "../firebase";
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { login } from "../Redux/authSlice";
-import "./LogIn.css";
-import { toast } from "react-toastify";
-import { useState } from "react";
+import { useForm } from 'react-hook-form';
+import { auth, db } from '../firebase';
+import {
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { login } from '../Redux/authSlice';
+import './LogIn.css';
+import { toast } from 'react-toastify';
+import { useState } from 'react';
+import { ScaleLoader } from 'react-spinners'; // for showing a spinner
 
 interface LoginFormData {
   email: string;
@@ -20,19 +24,26 @@ const LoginPage = () => {
     handleSubmit,
     formState: { errors },
   } = useForm<LoginFormData>();
-  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
-  const [inputEmail, setInputEmail] = useState<string>('')
+
+  // Loading and button states
+  const [loading, setLoading] = useState(false);
+  const [inputEmail, setInputEmail] = useState<string>('');
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const onSubmit = async (data: LoginFormData) => {
-    setIsButtonDisabled(true);
+    setLoading(true);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        data.email,
+        data.password
+      );
       const user = userCredential.user;
 
-      const userDocRef = doc(db, "users", user.uid);
+      const userDocRef = doc(db, 'users', user.uid);
       const userDocSnap = await getDoc(userDocRef);
 
       if (userDocSnap.exists()) {
@@ -54,32 +65,35 @@ const LoginPage = () => {
         );
 
         if (userData.isAdmin) {
-          navigate("/admin/panel");
+          navigate('/admin/panel');
         } else {
-          navigate("/početna");
+          navigate('/početna');
         }
       } else {
-        toast.error("Ne postoje informacije o ovom korisniku.");
+        toast.error('Ne postoje informacije o ovom korisniku.');
       }
     } catch (error) {
       if (error instanceof Error) {
-        toast.error("Prijavljivanje neuspešno");
+        toast.error('Prijavljivanje neuspešno');
       } else {
-        toast.error("Dogodila se greška prilikom prijave. Molimo vas da pokušate ponovo.");
+        toast.error(
+          'Dogodila se greška prilikom prijave. Molimo vas da pokušate ponovo.'
+        );
       }
-      setIsButtonDisabled(false);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleForgotPassword = async () => {
     if (!inputEmail) {
-      toast.error("Molimo vas da unesete email pre resetovanja lozinke.");
+      toast.error('Molimo vas da unesete email pre resetovanja lozinke.');
       return;
     }
 
     try {
       await sendPasswordResetEmail(auth, inputEmail);
-      toast.success("E-mail za resetovanje lozinke je poslat!");
+      toast.success('E-mail za resetovanje lozinke je poslat!');
     } catch (error) {
       if (error instanceof Error) {
         toast.error(`Greška: ${error.message}`);
@@ -92,6 +106,14 @@ const LoginPage = () => {
       <form className="login-page-form" onSubmit={handleSubmit(onSubmit)}>
         <h2 className="login-title">Prijava</h2>
 
+        {/* If loading, show spinner and/or a message */}
+        {loading && (
+          <div className="login-loader">
+            <ScaleLoader color="#54C143" />
+            <p>Obrađujem podatke...</p>
+          </div>
+        )}
+
         <div className="login-input-wrapper">
           <label htmlFor="email">Email</label>
           <input
@@ -99,10 +121,13 @@ const LoginPage = () => {
             type="email"
             className="login-input"
             placeholder="Unesite email adresu"
-            {...register("email", { required: "Unesite E-mail" })}
+            disabled={loading}
+            {...register('email', { required: 'Unesite E-mail' })}
             onChange={(e) => setInputEmail(e.target.value)}
           />
-          {errors.email && <span className="error">{errors.email.message}</span>}
+          {errors.email && (
+            <span className="error">{errors.email.message}</span>
+          )}
         </div>
 
         <div className="login-input-wrapper">
@@ -112,20 +137,31 @@ const LoginPage = () => {
             type="password"
             className="login-input"
             placeholder="Unesite lozinku"
-            {...register("password", { required: "Unesite lozinku" })}
+            disabled={loading}
+            {...register('password', { required: 'Unesite lozinku' })}
           />
-          {errors.password && <span className="error">{errors.password.message}</span>}
+          {errors.password && (
+            <span className="error">{errors.password.message}</span>
+          )}
         </div>
 
-        <span className="forgot-password-link" onClick={handleForgotPassword}>
+        <span
+          className={`forgot-password-link ${loading ? 'disabled' : ''}`}
+          onClick={!loading ? handleForgotPassword : undefined}
+        >
           Zaboravljena lozinka?
         </span>
 
         <div className="login-button-wrapper">
-          <button className="login-button" type="submit" disabled={isButtonDisabled}>
-            Prijavi se
+          <button className="login-button" type="submit" disabled={loading}>
+            {loading ? 'Prijavljivanje...' : 'Prijavi se'}
           </button>
-          <button className="register-button" type="button" onClick={() => navigate("/registracija")}>
+          <button
+            className="register-button"
+            type="button"
+            onClick={() => navigate('/registracija')}
+            disabled={loading}
+          >
             Registruj se
           </button>
         </div>
