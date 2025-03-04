@@ -12,7 +12,6 @@ import './AdminPanel.css';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import AddItemModal from '../Modals/NewItemModal';
 import DeleteIcon from '@mui/icons-material/Delete';
-import Tooltip from '@mui/material/Tooltip';
 import { ScaleLoader } from 'react-spinners';
 import EditItemModal from '../Modals/EditItemModal';
 import Filter from '../Filter/Filter';
@@ -312,13 +311,11 @@ export default function AdminPanel() {
                               key={imgIndex}
                               src={img}
                               alt={`Image ${imgIndex + 1}`}
-                              className={`thumbnail ${
-                                imgIndex === 0 ? 'main-image' : ''
-                              } ${
-                                selectedImageIndex[index] === imgIndex
+                              className={`thumbnail ${imgIndex === 0 ? 'main-image' : ''
+                                } ${selectedImageIndex[index] === imgIndex
                                   ? 'selected'
                                   : ''
-                              }`}
+                                }`}
                               onClick={() => handleImageSelect(index, imgIndex)}
                             />
                           ))}
