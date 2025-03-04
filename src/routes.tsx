@@ -1,5 +1,5 @@
 // src/router.tsx
-import { createHashRouter } from "react-router-dom";
+import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
 import Cart from "./components/Cart/Cart";
 import LogIn from "./components/LogIn/LogIn";
@@ -13,7 +13,7 @@ import Order from "./components/Order/Order";
 import Confirmation from "./components/Confirmation/Confirmation";
 import SubCategoryPage from "./components/SubCategory/SubCategory";
 
-export const router = createHashRouter([
+export const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
