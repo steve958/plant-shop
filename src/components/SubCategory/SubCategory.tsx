@@ -26,15 +26,24 @@ type Product = {
 export default function SubCategoryPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Sorting
     const [sortBy, setSortBy] = useState<string>("nameAsc");
+
+    // Manufacturer filter
     const [manufacturerFilter, setManufacturerFilter] = useState<string[]>([]);
 
+    // React Router
     const navigate = useNavigate();
     const { subCategory } = useParams<{ subCategory: string }>();
+
+    // Global search from Redux
     const searchQuery = useSelector((state: RootState) => state.search.query);
 
+    // 1) Fetch products by subcategory on mount or when subCategory changes
     useEffect(() => {
         const fetchProducts = async () => {
+            if (!subCategory) return;
             setLoading(true);
             try {
                 const q = query(
@@ -46,6 +55,7 @@ export default function SubCategoryPage() {
                     productId: doc.id,
                     ...doc.data(),
                 })) as Product[];
+
                 setProducts(fetchedProducts);
             } catch (error) {
                 console.error("Error fetching products for subcategory:", error);
@@ -54,12 +64,21 @@ export default function SubCategoryPage() {
             }
         };
 
-        if (subCategory) {
-            fetchProducts();
-        }
+        fetchProducts();
     }, [subCategory]);
 
-    // Filter products based on search query and selected manufacturers.
+    // 2) Compute unique manufacturers from the fetched products
+    const availableManufacturers = useMemo(() => {
+        const uniqueSet = new Set<string>();
+        products.forEach((p) => {
+            if (p.manufacturer) {
+                uniqueSet.add(p.manufacturer);
+            }
+        });
+        return Array.from(uniqueSet);
+    }, [products]);
+
+    // 3) Filter products by search query and user-selected manufacturers
     const filteredProducts = useMemo(() => {
         return products.filter((product) => {
             const matchesSearch = product.name
@@ -68,25 +87,32 @@ export default function SubCategoryPage() {
             const matchesManufacturer =
                 manufacturerFilter.length === 0 ||
                 manufacturerFilter.includes(product.manufacturer);
+
             return matchesSearch && matchesManufacturer;
         });
     }, [products, searchQuery, manufacturerFilter]);
 
-    // Sort the filtered products.
+    // 4) Sort the filtered products
     const sortedProducts = useMemo(() => {
         const sorted = [...filteredProducts];
-        if (sortBy === "nameAsc") {
-            sorted.sort((a, b) => a.name.localeCompare(b.name));
-        } else if (sortBy === "nameDesc") {
-            sorted.sort((a, b) => b.name.localeCompare(a.name));
-        } else if (sortBy === "priceAsc") {
-            sorted.sort((a, b) => a.price - b.price);
-        } else if (sortBy === "priceDesc") {
-            sorted.sort((a, b) => b.price - a.price);
+        switch (sortBy) {
+            case "nameDesc":
+                sorted.sort((a, b) => b.name.localeCompare(a.name));
+                break;
+            case "priceAsc":
+                sorted.sort((a, b) => a.price - b.price);
+                break;
+            case "priceDesc":
+                sorted.sort((a, b) => b.price - a.price);
+                break;
+            default: // "nameAsc"
+                sorted.sort((a, b) => a.name.localeCompare(b.name));
+                break;
         }
         return sorted;
     }, [filteredProducts, sortBy]);
 
+    // 5) Handlers
     const handleSortChange = (sort: string) => {
         setSortBy(sort);
     };
@@ -99,6 +125,7 @@ export default function SubCategoryPage() {
         navigate(`/proizvod/${productId}`);
     };
 
+    // 6) Render
     return (
         <div className="sub-category-page-container">
             <h2 className="sub-category-title">{subCategory}</h2>
@@ -112,15 +139,17 @@ export default function SubCategoryPage() {
                     <div className="sidebar">
                         <div className="sort-filter-wrapper">
                             <Sort onSortChange={handleSortChange} />
-                            <Filter onFilterChange={handleFilterChange} />
+                            <Filter
+                                onFilterChange={handleFilterChange}
+                                availableManufacturers={availableManufacturers}
+                            />
                         </div>
                     </div>
+
                     {/* Main Content Area */}
                     <div className="sub-main-content">
                         {sortedProducts.length === 0 ? (
-                            <div className="empty-message">
-                                Nema proizvoda po datom kriterijumu
-                            </div>
+                            <div className="empty-message">Nema proizvoda po datom kriterijumu</div>
                         ) : (
                             <Box
                                 className="products-container"
@@ -134,10 +163,7 @@ export default function SubCategoryPage() {
                             >
                                 {sortedProducts.map((product) => (
                                     <Box key={product.productId}>
-                                        <ProductCard
-                                            product={product}
-                                            onClick={handleProductClick}
-                                        />
+                                        <ProductCard product={product} onClick={handleProductClick} />
                                     </Box>
                                 ))}
                             </Box>
