@@ -2,6 +2,21 @@ import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { db, storage } from "../firebase";
 import { collection, addDoc } from "firebase/firestore";
+
+interface Product {
+  productId: string;
+  name: string;
+  category: string;
+  subcategory: string;
+  manufacturer: string;
+  gender: 'male' | 'female';
+  size: string[];
+  price: number;
+  images: string[];
+  description: string;
+  onDiscount?: boolean;
+  discountPrice?: number;
+}
 import { RootState } from "../Redux/store";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { toast } from "react-toastify";
@@ -61,7 +76,7 @@ const categoriesData = [
   },
 ];
 
-const NewItemModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+const NewItemModal: React.FC<{ onClose: () => void, onProductAdded: (newProduct: Product) => void; }> = ({ onClose }) => {
   const user = useSelector((state: RootState) => state.auth.user);
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { db, storage } from '../firebase';
 import {
   collection,
@@ -14,7 +14,7 @@ import AddItemModal from '../Modals/NewItemModal';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { ScaleLoader } from 'react-spinners';
 import EditItemModal from '../Modals/EditItemModal';
-import Filter from '../Filter/Filter';
+import Filter from '../Filter/Filter';          // <-- Refactored Filter
 import Sort from '../Sort/Sort';
 import { useSelector } from 'react-redux';
 import { RootState } from '../Redux/store';
@@ -24,7 +24,6 @@ import { Button, Dialog, DialogContent, DialogActions } from '@mui/material';
 type Product = {
   productId: string;
   name: string;
-  type: string;
   category: string;
   subcategory: string;
   manufacturer: string;
@@ -37,33 +36,41 @@ type Product = {
   discountPrice?: number;
 };
 
-export default function AdminPanel() {
-  const [newItemClicked, setNewItemClicked] = useState(false);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number[]>([]);
+type DeleteTarget = {
+  productId: string;
+  images: string[];
+} | null;
 
-  // If true, triggers a fresh product fetch
+export default function AdminPanel() {
+  // -----------------------------
+  // State
+  // -----------------------------
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [refreshProducts, setRefreshProducts] = useState(false);
 
+  const [newItemClicked, setNewItemClicked] = useState(false);
   const [editItemClicked, setEditItemClicked] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Confirmation modal for deletion
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<{
-    productId: string;
-    images: string[];
-  } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
 
-  // Filter/Sort states
+  // For selecting which image index is "main" or "selected"
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number[]>([]);
+
+  // Filter & Sort states
   const [manufacturerFilter, setManufacturerFilter] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState('nameAsc');
+
+  // Search query from Redux
   const searchQuery = useSelector((state: RootState) => state.search.query);
 
-  // ---------- Data Fetch Logic ----------
-  const fetchProducts = async () => {
+  // -----------------------------
+  // 1) Fetch Products (on mount + refresh)
+  // -----------------------------
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
       const productsCollection = collection(db, 'products');
@@ -73,171 +80,237 @@ export default function AdminPanel() {
         return { productId: doc.id, ...data };
       });
       setProducts(productList);
-      setFilteredProducts(productList);
       setSelectedImageIndex(Array(productList.length).fill(0));
     } catch (error) {
       console.error('Error fetching products: ', error);
     } finally {
       setLoading(false);
-      setRefreshProducts(false); // Once fetch is done, we reset
+      setRefreshProducts(false); // Prevent infinite loop
     }
-  };
-
-  // 1) Initial fetch on mount
-  useEffect(() => {
-    fetchProducts();
   }, []);
 
-  // 2) Re-fetch if refreshProducts becomes true
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  // Re-fetch if refreshProducts is toggled
   useEffect(() => {
     if (refreshProducts) {
       fetchProducts();
     }
-  }, [refreshProducts]);
+  }, [refreshProducts, fetchProducts]);
 
-  // ---------- Handlers ----------
-  const handleNewItemClicked = () => {
+  // -----------------------------
+  // 2) Adding a Product
+  // -----------------------------
+  const handleNewItemClicked = useCallback(() => {
     setNewItemClicked(true);
-  };
+    // We'll do the actual fetch AFTER product is saved
+    setRefreshProducts(false);
+  }, []);
 
-  const handleCloseAddItemModal = () => {
+  // Optionally insert new product in local state immediately:
+  const handleAddProductLocally = useCallback((newProduct: Product) => {
+    // Insert at the front so user sees it instantly
+    setProducts((prev) => [newProduct, ...prev]);
+  }, []);
+
+  // Called when AddItemModal closes
+  const handleCloseAddItemModal = useCallback(() => {
     setNewItemClicked(false);
-    setRefreshProducts(true); // Trigger re-fetch after adding a product
-  };
+    // Now we trigger a fresh re-fetch from Firestore to confirm
+    setRefreshProducts(true);
+  }, []);
 
-  const handleEditItemClick = (product: Product) => {
+  // -----------------------------
+  // 3) Editing a Product
+  // -----------------------------
+  const handleEditItemClick = useCallback((product: Product) => {
     setSelectedProduct(product);
     setEditItemClicked(true);
-  };
+    setRefreshProducts(false);
+  }, []);
 
-  const handleCloseEditItemModal = () => {
+  const handleCloseEditItemModal = useCallback(() => {
     setEditItemClicked(false);
     setSelectedProduct(null);
-    setRefreshProducts(true); // Re-fetch after editing
-  };
+    setRefreshProducts(true);
+  }, []);
 
-  // Update main image
-  const handleImageSelect = async (
-    productIndex: number,
-    imageIndex: number
-  ) => {
-    const updatedSelectedImageIndex = [...selectedImageIndex];
-    updatedSelectedImageIndex[productIndex] = imageIndex;
-    setSelectedImageIndex(updatedSelectedImageIndex);
+  // -----------------------------
+  // 4) Image Selection / Reordering
+  // -----------------------------
+  const handleImageSelect = useCallback(
+    async (productIndex: number, imageIndex: number) => {
+      const product = products[productIndex];
+      if (!product) return;
 
-    const selectedProductId = filteredProducts[productIndex].productId;
-    const newImages = [...filteredProducts[productIndex].images];
-    const selectedImage = newImages.splice(imageIndex, 1)[0];
-    newImages.unshift(selectedImage);
+      // Move selected image to the front locally
+      setSelectedImageIndex((prev) => {
+        const updated = [...prev];
+        updated[productIndex] = imageIndex;
+        return updated;
+      });
 
-    try {
-      const productRef = doc(db, 'products', selectedProductId);
-      await updateDoc(productRef, { images: newImages });
-    } catch (error) {
-      console.error('Error updating product images:', error);
-    }
-  };
+      const imagesCopy = [...product.images];
+      const chosen = imagesCopy.splice(imageIndex, 1)[0];
+      imagesCopy.unshift(chosen);
 
-  // Confirm Deletion
-  const openDeleteModal = (
-    event: React.MouseEvent<SVGSVGElement>,
-    productId: string,
-    images: string[]
-  ) => {
-    event.stopPropagation();
-    setDeleteTarget({ productId, images });
-    setDeleteModalOpen(true);
-  };
+      // Update in Firestore
+      try {
+        const docRef = doc(db, 'products', product.productId);
+        await updateDoc(docRef, { images: imagesCopy });
+      } catch (err) {
+        console.error('Error updating images:', err);
+      }
+    },
+    [products]
+  );
 
-  const closeDeleteModal = () => {
+  // -----------------------------
+  // 5) Deleting a Product
+  // -----------------------------
+  const openDeleteModal = useCallback(
+    (
+      event: React.MouseEvent<SVGSVGElement>,
+      productId: string,
+      images: string[]
+    ) => {
+      event.stopPropagation();
+      setDeleteTarget({ productId, images });
+      setDeleteModalOpen(true);
+      setRefreshProducts(false);
+    },
+    []
+  );
+
+  const closeDeleteModal = useCallback(() => {
     setDeleteModalOpen(false);
     setDeleteTarget(null);
-  };
+  }, []);
 
-  // Final Deletion
-  const handleDeleteConfirmed = async () => {
+  const handleDeleteConfirmed = useCallback(async () => {
     if (!deleteTarget) return;
     const { productId, images } = deleteTarget;
     try {
+      // Delete doc from Firestore
       const productDocRef = doc(db, 'products', productId);
       await deleteDoc(productDocRef);
 
-      const deleteImagePromises = images.map((image) => {
-        const imageRef = ref(storage, image);
+      // Remove from local state
+      setProducts((prev) => prev.filter((p) => p.productId !== productId));
+
+      // Delete from storage
+      const deletePromises = images.map((img) => {
+        const imageRef = ref(storage, img);
         return deleteObject(imageRef);
       });
-      await Promise.all(deleteImagePromises);
-
-      setProducts((prev) => prev.filter((p) => p.productId !== productId));
-    } catch (error) {
-      console.error('Error deleting product:', error);
+      await Promise.all(deletePromises);
+    } catch (err) {
+      console.error('Error deleting product:', err);
     } finally {
       closeDeleteModal();
+      setRefreshProducts(true);
     }
-  };
+  }, [deleteTarget, closeDeleteModal]);
 
-  // Utility: Format price
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat('sr-RS', {
+  // -----------------------------
+  // 6) Format Price Utility
+  // -----------------------------
+  const formatPrice = useCallback((price: number) => {
+    return new Intl.NumberFormat('sr-RS', {
       style: 'currency',
       currency: 'RSD',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(price);
+  }, []);
 
-  // ---------- Filtering & Sorting ----------
+  // -----------------------------
+  // 7) Derive Manufacturer List + Filter/Sort
+  // -----------------------------
+  // A) Compute all unique manufacturers from products
+  const availableManufacturers = useMemo(() => {
+    const setOfManufacturers = new Set<string>();
+    products.forEach((p) => {
+      if (p.manufacturer) {
+        setOfManufacturers.add(p.manufacturer);
+      }
+    });
+    return Array.from(setOfManufacturers);
+  }, [products]);
+
+  // B) Filter
   const filteredData = useMemo(() => {
-    let updated = products.filter((p) =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    if (manufacturerFilter.length > 0) {
-      updated = updated.filter((p) =>
-        manufacturerFilter.includes(p.manufacturer)
+    let data = products;
+
+    // Search by name
+    if (searchQuery.trim() !== '') {
+      data = data.filter((p) =>
+        p.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
-    return updated;
+
+    // Manufacturer filter
+    if (manufacturerFilter.length > 0) {
+      data = data.filter((p) => manufacturerFilter.includes(p.manufacturer));
+    }
+
+    return data;
   }, [products, searchQuery, manufacturerFilter]);
 
+  // C) Sort
   const sortedData = useMemo(() => {
     const sorted = [...filteredData];
-    if (sortBy === 'nameAsc') {
-      sorted.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (sortBy === 'nameDesc') {
-      sorted.sort((a, b) => b.name.localeCompare(a.name));
-    } else if (sortBy === 'priceAsc') {
-      sorted.sort((a, b) => a.price - b.price);
-    } else if (sortBy === 'priceDesc') {
-      sorted.sort((a, b) => b.price - a.price);
+    switch (sortBy) {
+      case 'priceAsc':
+        sorted.sort((a, b) => a.price - b.price);
+        break;
+      case 'priceDesc':
+        sorted.sort((a, b) => b.price - a.price);
+        break;
+      case 'nameDesc':
+        sorted.sort((a, b) => b.name.localeCompare(a.name));
+        break;
+      default: // nameAsc
+        sorted.sort((a, b) => a.name.localeCompare(b.name));
+        break;
     }
     return sorted;
   }, [filteredData, sortBy]);
 
-  // Update displayed products
-  useEffect(() => {
-    setFilteredProducts(sortedData);
-  }, [sortedData]);
-
-  // ---------- Event handlers for Filter/Sort ----------
-  const handleSortChange = (sortOption: string) => {
+  // -----------------------------
+  // 8) Handlers for Sort & Filter
+  // -----------------------------
+  const handleSortChange = useCallback((sortOption: string) => {
     setSortBy(sortOption);
-  };
+  }, []);
 
-  const handleFilterChange = (filters: { manufacturers: string[] }) => {
-    setManufacturerFilter(filters.manufacturers);
-  };
+  const handleFilterChange = useCallback(
+    (filters: { manufacturers: string[] }) => {
+      // The Filter component gives us the new manufacturer selection
+      setManufacturerFilter(filters.manufacturers);
+    },
+    []
+  );
 
+  // -----------------------------
+  // Render
+  // -----------------------------
   return (
     <div className="admin-panel-container">
       {/* Add / Edit Modals */}
-      {newItemClicked && <AddItemModal onClose={handleCloseAddItemModal} />}
-      {editItemClicked && selectedProduct && (
-        <EditItemModal
-          product={selectedProduct}
-          onClose={handleCloseEditItemModal}
+      {newItemClicked && (
+        <AddItemModal
+          onClose={handleCloseAddItemModal}
+          onProductAdded={handleAddProductLocally}
         />
       )}
+      {editItemClicked && selectedProduct && (
+        <EditItemModal product={selectedProduct} onClose={handleCloseEditItemModal} />
+      )}
 
-      {/* Confirmation Dialog */}
+      {/* Confirmation Dialog for Delete */}
       <Dialog open={deleteModalOpen} onClose={closeDeleteModal}>
         <DialogContent>
           Da li ste sigurni da želite da obrišete ovaj proizvod?
@@ -252,15 +325,18 @@ export default function AdminPanel() {
         </DialogActions>
       </Dialog>
 
-      {/* Sidebar */}
+      {/* Sidebar (Sort + Filter) */}
       <div className="admin-sidebar">
         <div className="admin-sort-filter-wrapper">
           <Sort onSortChange={handleSortChange} />
-          <Filter onFilterChange={handleFilterChange} />
+          <Filter
+            onFilterChange={handleFilterChange}
+            availableManufacturers={availableManufacturers}
+          />
         </div>
       </div>
 
-      {/* Main Area */}
+      {/* Main Content */}
       <div className="admin-main-content">
         <div className="add-product-button" onClick={handleNewItemClicked}>
           <AddCircleIcon sx={{ fontSize: 40 }} />
@@ -271,7 +347,7 @@ export default function AdminPanel() {
           <div className="loader">
             <ScaleLoader color="#54C143" />
           </div>
-        ) : filteredProducts.length === 0 ? (
+        ) : sortedData.length === 0 ? (
           <p>Nema proizvoda za prikaz.</p>
         ) : (
           <div className="table-container">
@@ -288,29 +364,32 @@ export default function AdminPanel() {
                 </tr>
               </thead>
               <tbody>
-                {filteredProducts.map((product, index) => (
+                {sortedData.map((product, index) => (
                   <tr
                     key={product.productId}
-                    onClick={() => handleEditItemClick(product)}
                     className="product-row"
+                    onClick={() => handleEditItemClick(product)}
                   >
                     <td>{product.name}</td>
                     <td>{product.category}</td>
                     <td>{product.subcategory}</td>
                     <td>{formatPrice(product.price)}</td>
                     <td>
-                      {product.onDiscount ? (
-                        <CheckIcon style={{ color: 'green' }} />
-                      ) : null}
+                      {product.onDiscount && <CheckIcon style={{ color: 'green' }} />}
                     </td>
-                    <td onClick={(e) => e.stopPropagation()}>
+                    <td
+                      onClick={(e) => {
+                        // Prevent row click from opening Edit modal
+                        e.stopPropagation();
+                      }}
+                    >
                       <div className="images-wrapper">
                         <div className="thumbnails-row">
                           {product.images.map((img, imgIndex) => (
                             <img
                               key={imgIndex}
                               src={img}
-                              alt={`Image ${imgIndex + 1}`}
+                              alt={`image-${imgIndex}`}
                               className={`thumbnail ${imgIndex === 0 ? 'main-image' : ''
                                 } ${selectedImageIndex[index] === imgIndex
                                   ? 'selected'
@@ -322,15 +401,15 @@ export default function AdminPanel() {
                         </div>
                       </div>
                     </td>
-                    <td onClick={(e) => e.stopPropagation()}>
+                    <td
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                    >
                       <DeleteIcon
                         className="delete-icon"
                         onClick={(event) =>
-                          openDeleteModal(
-                            event,
-                            product.productId,
-                            product.images
-                          )
+                          openDeleteModal(event, product.productId, product.images)
                         }
                       />
                     </td>
