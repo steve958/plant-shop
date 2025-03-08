@@ -1,6 +1,6 @@
 /* Container for the entire subcategory page */
 .sub-category-page-container {
-    min-height: calc(100vh - 369px);
+    min-height: calc(100vh - 354px);
     width: 100%;
     padding: 40px 20px;
     background-color: #f8f8f8;
