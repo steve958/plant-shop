@@ -1,19 +1,128 @@
+/* Main container for the home page */
 .home-page-container {
     min-height: calc(100vh - 369px);
     width: 100%;
-    padding: 50px;
     background-color: #ffffff8e;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
 }
 
-.home-page-wrapper {
-    display: flex;
-    gap: 20px;
+/* Carousel styles to make images full width */
+.carousel-container {
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    margin-bottom: 20px;
 }
 
-/* Unified Sidebar containing both Sort and Filter */
+.carousel-image {
+    width: 100%;
+    height: 70vh;
+    object-fit: cover;
+}
+
+.need-help-section {
+    background: linear-gradient(260deg,
+            rgba(182, 192, 191, 1) 0%,
+            rgba(84, 193, 67, 1) 100%);
+    display: flex;
+    width: 100vw;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+
+.promo-banner {
+    display: flex;
+    flex-direction: column;
+    color: white;
+    padding: 40px;
+    border-radius: 8px;
+    width: 60%;
+    align-items: center;
+}
+
+.promo-text {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    text-align: center;
+}
+
+.promo-text h2 {
+    color: white !important;
+    font-size: 36px;
+    margin-bottom: 20px;
+}
+
+.learn-more-btn {
+    border: 1px solid white !important;
+    color: white !important;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.learn-more-btn:hover {
+    transition: all 0.3s;
+    transform: scale(1.2);
+}
+
+.help-img {
+    width: 50%;
+    height: 350px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+
+.home-page-wrapper {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 600px) {
+    .need-help-section {
+        flex-direction: column;
+        padding: 10px;
+    }
+
+    .promo-banner {
+        width: 100%;
+        padding: 20px;
+    }
+
+    .promo-text h2 {
+        font-size: 24px;
+    }
+
+    .learn-more-btn {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+
+    .help-img {
+        width: 100%;
+        height: auto;
+        margin-top: 20px;
+    }
+}
+
+
+/* Adjust carousel image height on small screens */
+@media (max-width: 768px) {
+    .carousel-image {
+        height: 200px;
+    }
+}
+
+/* Wrapper for the sidebar and main content */
+.home-page-wrapper {
+    display: flex;
+}
+
+/* Sidebar containing both Sort and Filter */
 .sidebar {
     width: 260px;
     flex-shrink: 0;
@@ -23,30 +132,29 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+/* Layout for Sort and Filter components */
 .sort-filter-wrapper {
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
-/* Main content area */
+/* Main content area for products */
 .home-main-content {
     flex-grow: 1;
 }
 
-/* Grid for products */
+/* Grid layout for products */
 .home-products-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(285px, 1fr));
-    gap: 20px;
+    gap: 10px;
     justify-content: center;
     width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
+    padding: 10px 20px;
 }
 
-/* Responsive: On small screens, stack sidebar above main content */
+/* Responsive adjustments for small screens */
 @media (max-width: 768px) {
     .home-page-wrapper {
         flex-direction: column;

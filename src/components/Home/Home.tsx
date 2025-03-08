@@ -9,6 +9,11 @@ import { useNavigate } from "react-router-dom";
 import Sort from "../Sort/Sort";
 import Filter from "../Filter/Filter"; // <-- Your refactored Filter
 import ProductCard from "../ProductCard/ProductCard";
+import help from "../../assets/protect.jpg"
+
+// Import MUI Carousel (using react-material-ui-carousel as an example)
+import Carousel from "react-material-ui-carousel";
+import Button from "@mui/material/Button";
 
 type Product = {
   productId: string;
@@ -39,6 +44,22 @@ export default function Home() {
 
   // For navigation on product click
   const navigate = useNavigate();
+
+  // Example carousel items (replace with your own image URLs)
+  const carouselItems = [
+    {
+      image: "https://www.agromarket.rs/files/images/Srbija%20Baneri%20Mart%202025_%20L%2038%201920x656%20copy%206.jpg",
+      alt: "Carousel Image 1",
+    },
+    {
+      image: "https://www.agromarket.rs/files/images/Srbija%20Baneri%20Mart%202025_VBS%201620%201920x656%20copy%204.jpg",
+      alt: "Carousel Image 2",
+    },
+    {
+      image: "https://www.agromarket.rs/files/files/__TIGAR%20lovacke_1920x656.jpg",
+      alt: "Carousel Image 3",
+    },
+  ];
 
   // 1) Fetch only discounted products from Firestore on mount
   useEffect(() => {
@@ -99,7 +120,7 @@ export default function Home() {
   const sortedProducts = useMemo(() => {
     const sorted = [...filteredProducts];
 
-    // For convenience, define a helper to get effective price:
+    // Helper to get effective price:
     const getEffectivePrice = (p: Product) =>
       p.onDiscount && p.discountPrice ? p.discountPrice : p.price;
 
@@ -143,37 +164,62 @@ export default function Home() {
           <ScaleLoader color="#54C143" />
         </div>
       ) : (
-        <div className="home-page-wrapper">
-          {/* Sidebar: Sort + Filter */}
-          <div className="sidebar">
-            <div className="sort-filter-wrapper">
-              <Sort onSortChange={handleSortChange} />
-              <Filter
-                onFilterChange={handleFilterChange}
-                availableManufacturers={availableManufacturers}
-              />
+        <>
+          {/* Carousel Section */}
+          <div className="carousel-container">
+            <Carousel indicators={true} navButtonsAlwaysVisible={true}>
+              {carouselItems.map((item, index) => (
+                <img
+                  key={index}
+                  src={item.image}
+                  alt={item.alt}
+                  className="carousel-image"
+                />
+              ))}
+            </Carousel>
+          </div>
+          <h2 className="sub-category-title">Prizvodi na akciji</h2>
+          {/* Content Section: Sidebar + Product Grid */}
+          <div className="home-page-wrapper">
+            <div className="sidebar">
+              <div className="sort-filter-wrapper">
+                <Sort onSortChange={handleSortChange} />
+                <Filter
+                  onFilterChange={handleFilterChange}
+                  availableManufacturers={availableManufacturers}
+                />
+              </div>
+            </div>
+            <div className="home-main-content">
+              <div className="home-products-grid">
+                {sortedProducts.length === 0 ? (
+                  <div className="empty-message">
+                  </div>
+                ) : (
+                  sortedProducts.map((product) => (
+                    <ProductCard
+                      key={product.productId}
+                      product={product}
+                      onClick={handleProductClick}
+                    />
+                  ))
+                )}
+              </div>
             </div>
           </div>
-
-          {/* Main product grid */}
-          <div className="home-main-content">
-            <div className="home-products-grid">
-              {sortedProducts.length === 0 ? (
-                <div className="empty-message">
-                  Nema proizvoda po datom kriterijumu
-                </div>
-              ) : (
-                sortedProducts.map((product) => (
-                  <ProductCard
-                    key={product.productId}
-                    product={product}
-                    onClick={handleProductClick}
-                  />
-                ))
-              )}
+          <div className="need-help-section">
+            {/* Bottom section - Promo Banner */}
+            <div className="promo-banner">
+              <div className="promo-text">
+                <h2>Potrebna vam je stručna podrška?</h2>
+              </div>
+              <p style={{ marginBottom: '15px', textAlign: 'center' }}>Naš tim čine iskusni agronomi, spremni da odgovore na sve izazove.</p>
+              <Button className="learn-more-btn">Kontaktirajte nas</Button>
             </div>
+            <img src={help} alt="" className='help-img' />
+            <div className='img-cover'></div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

@@ -65,7 +65,7 @@ nav {
     padding: 10px 20px;
     cursor: pointer;
     transition: background 0.2s ease;
-
+    color: #5BBC4A;
 }
 
 .dropdown-item:hover {

@@ -26,7 +26,7 @@ import "./NewItemModal.css";
 // Define the categories and their corresponding subcategories
 const categoriesData = [
   {
-    label: "Zaštita",
+    label: "Zaštita bilja",
     subcategories: [
       "Herbicidi",
       "Fungicidi",
@@ -35,7 +35,7 @@ const categoriesData = [
     ],
   },
   {
-    label: "Ishrana",
+    label: "Ishrana bilja",
     subcategories: [
       "Osnovna granulisana đubriva",
       "Kristalna vodootopiva đubriva",
@@ -46,7 +46,7 @@ const categoriesData = [
     ],
   },
   {
-    label: "Seme",
+    label: "Seme i sadnice",
     subcategories: [
       "Seme ratarskih kultura",
       "Seme povrtarskih kultura",
@@ -63,7 +63,7 @@ const categoriesData = [
     ],
   },
   {
-    label: "Garden program",
+    label: "Garden oprema i alati",
     subcategories: [
       "Mašine",
       "Alati",
