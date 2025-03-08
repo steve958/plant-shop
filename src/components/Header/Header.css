@@ -97,6 +97,12 @@
   cursor: pointer;
 }
 
+.info-site-image {
+  height: 50px;
+  width: 50px;
+  color: #5BBC4A;
+}
+
 /* For very small devices (phones, less than 576px) */
 @media (max-width: 575.98px) {
   .header-container {

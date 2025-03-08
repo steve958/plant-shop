@@ -95,7 +95,7 @@ export default function ItemDetails() {
   return (
     <div className="item-details-container">
       {loading ? (
-        <div className="loader">Loading...</div>
+        <div className="loader">Učitavanje...</div>
       ) : product ? (
         <div className="item-details-wrapper">
           {/* Left: Product Images */}

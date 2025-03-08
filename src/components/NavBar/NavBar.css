@@ -48,6 +48,14 @@ nav {
     white-space: nowrap;
 }
 
+.sub-item-icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+
 .dropdown-menu.open {
     opacity: 1;
     visibility: visible;
@@ -57,6 +65,7 @@ nav {
     padding: 10px 20px;
     cursor: pointer;
     transition: background 0.2s ease;
+
 }
 
 .dropdown-item:hover {

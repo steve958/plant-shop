@@ -72,6 +72,7 @@ const categoriesData = [
       "Supstrati malčevi i zemlja za cveće",
       "Saksije i žardinjere",
       "Baštenski nameštaj",
+      "HTZ oprema"
     ],
   },
 ];

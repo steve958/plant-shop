@@ -68,7 +68,7 @@
     text-align: left;
     font-weight: 700;
     position: absolute;
-    left: 42%;
+    left: calc(100vw / 2 - 144px);
     top: 42%;
 }
 

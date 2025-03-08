@@ -7,7 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../Redux/store";
 import { setSearchQuery } from '../Redux/searchSlice'; // Import the action
-import LogoX from "../../assets/PlantCLogo.jpg";
+import LogoX from "../../assets/Logo-500.jpg";
+import originalWebsite from '../../assets/loader.svg'
 
 export default function Header() {
   const navigate = useNavigate();
@@ -23,6 +24,10 @@ export default function Header() {
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     dispatch(setSearchQuery(event.target.value)); // Dispatch the search query to Redux
   };
+
+  const handleNavigate = () => {
+    window.location.href = 'https://www.plantcentar.com/pocetna'
+  }
 
   return (
     <div className="header-container">
@@ -42,13 +47,17 @@ export default function Header() {
         </div>
       </div>
       <div className="header-menu-container">
-        <div className="cart-header-container" onClick={() => navigate("/korpa")}>
+        <div className="login-container" onClick={handleNavigate}>
+          <img src={originalWebsite} className="info-site-image" alt="originalni website" />
+          <label className="header-menu-label">Plant centar</label>
+        </div>
+        {user && <div className="cart-header-container" onClick={() => navigate("/korpa")}>
           <ShoppingCartOutlinedIcon sx={{ fontSize: 40, color: '#54C143', cursor: 'pointer' }} />
           {totalItems > 0 && ( // Only show the quantity if there are items
             <span className="cart-quantity">{totalItems}</span>
           )}
           <label className="header-menu-label">Korpa</label>
-        </div>
+        </div>}
         <div className="login-container" onClick={() => navigate(user ? "/profil" : "/prijava")}>
           <AccountCircleOutlinedIcon sx={{ fontSize: 40, color: '#54C143' }} />
           <label className="header-menu-label">{user ? "Profil" : "Prijava"}</label>
