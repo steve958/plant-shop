@@ -45,6 +45,10 @@ export default function Home() {
   // For navigation on product click
   const navigate = useNavigate();
 
+  const navigateToContanctPage = () => {
+    window.location.href = 'https://www.plantcentar.com/kontakt'
+  }
+
   // Example carousel items (replace with your own image URLs)
   const carouselItems = [
     {
@@ -214,7 +218,7 @@ export default function Home() {
                 <h2>Potrebna vam je stručna podrška?</h2>
               </div>
               <p style={{ marginBottom: '15px', textAlign: 'center' }}>Naš tim čine iskusni agronomi, spremni da odgovore na sve izazove.</p>
-              <Button className="learn-more-btn">Kontaktirajte nas</Button>
+              <Button className="learn-more-btn" onClick={navigateToContanctPage}>Kontaktirajte nas</Button>
             </div>
             <img src={help} alt="" className='help-img' />
             <div className='img-cover'></div>
