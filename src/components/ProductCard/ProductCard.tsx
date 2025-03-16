@@ -4,18 +4,21 @@ import CardActionArea from "@mui/material/CardActionArea";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import { Box } from "@mui/material";
+import discountImg from '../../assets/akcija.png'
 
 type Product = {
     productId: string;
     name: string;
     price: number;
     images: string[];
+    onDiscount?: boolean,
 };
 
 interface ProductCardProps {
     product: Product;
     onClick: (productId: string) => void;
-    onAddToCart?: (productId: string) => void; // optional callback
+    onDiscount?: boolean;// optional callback
+    onAddToCart?: (productId: string) => void;
 }
 
 export default function ProductCard({
@@ -140,6 +143,15 @@ export default function ProductCard({
                     >
                         {product.name}
                     </Typography>
+                    {product.onDiscount && <img src={discountImg} alt=""
+                        style={{
+                            position: 'absolute',
+                            right: '0px',
+                            top: '0px',
+                            width: "80px",
+                            height: "80px",
+                            objectFit: "contain",
+                        }} />}
                     <Typography
                         variant="body2"
                         sx={{

@@ -161,6 +161,11 @@
         align-items: center;
     }
 
+    .home-products-grid {
+        grid-template-columns: auto;
+        gap: 20px;
+    }
+
     .sidebar {
         width: 100%;
         max-width: 400px;
@@ -169,5 +174,11 @@
 
     .home-main-content {
         width: 100%;
+    }
+}
+
+@media (max-width: 450px) {
+    .sidebar {
+        margin: 0 !important;
     }
 }

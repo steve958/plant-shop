@@ -9,11 +9,8 @@ import { useNavigate } from "react-router-dom";
 import Sort from "../Sort/Sort";
 import Filter from "../Filter/Filter"; // <-- Your refactored Filter
 import ProductCard from "../ProductCard/ProductCard";
-import help from "../../assets/protect.jpg"
-
 // Import MUI Carousel (using react-material-ui-carousel as an example)
 import Carousel from "react-material-ui-carousel";
-import Button from "@mui/material/Button";
 
 type Product = {
   productId: string;
@@ -44,10 +41,6 @@ export default function Home() {
 
   // For navigation on product click
   const navigate = useNavigate();
-
-  const navigateToContanctPage = () => {
-    window.location.href = 'https://www.plantcentar.com/kontakt'
-  }
 
   // Example carousel items (replace with your own image URLs)
   const carouselItems = [
@@ -210,18 +203,6 @@ export default function Home() {
                 )}
               </div>
             </div>
-          </div>
-          <div className="need-help-section">
-            {/* Bottom section - Promo Banner */}
-            <div className="promo-banner">
-              <div className="promo-text">
-                <h2>Potrebna vam je stručna podrška?</h2>
-              </div>
-              <p style={{ marginBottom: '15px', textAlign: 'center' }}>Naš tim čine iskusni agronomi, spremni da odgovore na sve izazove.</p>
-              <Button className="learn-more-btn" onClick={navigateToContanctPage}>Kontaktirajte nas</Button>
-            </div>
-            <img src={help} alt="" className='help-img' />
-            <div className='img-cover'></div>
           </div>
         </>
       )}
