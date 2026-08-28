@@ -10,6 +10,7 @@ import { toast } from 'react-toastify';
 import { db } from '../firebase';
 import { addToCart } from '../Redux/cartSlice';
 import productPlaceholder from '../../assets/product-placeholder.svg';
+import Loader from '../Loader/Loader';
 import './ItemDetails.css';
 
 type Product = {
@@ -83,7 +84,7 @@ export default function ItemDetails() {
 
   return (
     <main className="item-details-container">
-      {loading ? <div className="loader">Učitavanje...</div> : product ? (
+      {loading ? <Loader label="Učitavamo proizvod" /> : product ? (
         <div className="item-details-page">
           <nav className="product-breadcrumb" aria-label="Putanja">
             <Link to="/početna">Početna</Link><span>/</span>
@@ -93,12 +94,12 @@ export default function ItemDetails() {
           <div className="item-details-wrapper">
             <section className="product-images" aria-label="Fotografije proizvoda">
               <div className="main-image-container">
-                <img src={selectedImage || productPlaceholder} alt={product.name} className="main-image" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} />
+                <img src={selectedImage || productPlaceholder} alt={product.name} className="main-image" loading="eager" decoding="async" fetchPriority="high" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} />
               </div>
               {product.images.length > 1 && <div className="thumbnail-strip">
                 {product.images.map((image, index) => (
                   <button type="button" key={image || index} className={`thumbnail-button ${selectedImage === image ? 'active' : ''}`} onClick={() => setSelectedImage(image)} aria-label={`Prikaži fotografiju ${index + 1}`}>
-                    <img src={image} alt={`${product.name}, fotografija ${index + 1}`} className="thumbnail" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} />
+                    <img src={image} alt={`${product.name}, fotografija ${index + 1}`} className="thumbnail" loading="lazy" decoding="async" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} />
                   </button>
                 ))}
               </div>}

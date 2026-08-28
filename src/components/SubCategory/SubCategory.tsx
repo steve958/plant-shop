@@ -4,7 +4,6 @@ import { db } from "../firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 import { Box } from "@mui/material";
-import { ScaleLoader } from "react-spinners";
 import Sort from "../Sort/Sort";
 import Filter from "../Filter/Filter";
 import { useSelector } from "react-redux";
@@ -12,6 +11,7 @@ import { useDispatch } from "react-redux";
 import { RootState } from "../Redux/store";
 import { addToCart } from "../Redux/cartSlice";
 import ProductCard from "../ProductCard/ProductCard";
+import Loader from "../Loader/Loader";
 import { toast } from "react-toastify";
 
 type Product = {
@@ -157,9 +157,7 @@ export default function SubCategoryPage() {
                 <p>Provereni proizvodi uz stručnu podršku pri izboru i primeni.</p>
             </div>
             {loading ? (
-                <div className="loader">
-                    <ScaleLoader color="#54C143" />
-                </div>
+                <Loader label="Učitavamo proizvode" />
             ) : (
                 <div className="sub-page-wrapper">
                     {/* Unified Sidebar: Sort on top, Filter below */}

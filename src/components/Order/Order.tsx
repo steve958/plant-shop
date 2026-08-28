@@ -109,7 +109,7 @@ const Order = () => {
 
           <section className="order-review">
             <div className="order-section-heading"><span>03</span><div><h2>Proizvodi</h2><p>{items.length} {items.length === 1 ? 'stavka' : 'stavke'} u porudžbini</p></div></div>
-            <div className="order-items">{items.map((item) => <article key={item.productId} className="order-item"><img src={item.image || productPlaceholder} alt={item.name} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} /><div><h3>{item.name}</h3><p>Količina: {item.quantity}</p></div><strong>{formatPrice(item.price * item.quantity)}</strong></article>)}</div>
+            <div className="order-items">{items.map((item) => <article key={item.productId} className="order-item"><img src={item.image || productPlaceholder} alt={item.name} loading="lazy" decoding="async" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} /><div><h3>{item.name}</h3><p>Količina: {item.quantity}</p></div><strong>{formatPrice(item.price * item.quantity)}</strong></article>)}</div>
           </section>
         </div>
 

@@ -15,6 +15,12 @@
   background: var(--shop-warm);
 }
 
+.shop-route-stage {
+  position: relative;
+  flex: 1;
+  min-height: 460px;
+}
+
 input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;

@@ -6,7 +6,6 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
 import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
-import { ScaleLoader } from "react-spinners";
 import { toast } from "react-toastify";
 import { db } from "../firebase";
 import { RootState } from "../Redux/store";
@@ -14,6 +13,7 @@ import { addToCart } from "../Redux/cartSlice";
 import Sort from "../Sort/Sort";
 import Filter from "../Filter/Filter";
 import ProductCard from "../ProductCard/ProductCard";
+import Loader from "../Loader/Loader";
 import heroImage from "../../assets/protect.jpg";
 import protectionIcon from "../../assets/zastita/insekticidi-Green.png";
 import nutritionIcon from "../../assets/ishrana/kristalna-Green.png";
@@ -182,7 +182,7 @@ export default function Home() {
             </div>
           </div>
           <figure className="shop-hero__visual">
-            <img src={heroImage} alt="Mlada biljka u kvalitetno pripremljenom zemljištu" />
+            <img src={heroImage} alt="Mlada biljka u kvalitetno pripremljenom zemljištu" decoding="async" fetchPriority="high" />
             <figcaption>
               <span>Plant Centar preporuka</span>
               <strong>Pravi proizvod u pravo vreme</strong>
@@ -226,7 +226,7 @@ export default function Home() {
                 onClick={() => navigate(category.route)}
               >
                 <span className="shop-category-card__icon">
-                  <img src={category.icon} alt="" />
+                  <img src={category.icon} alt="" loading="lazy" decoding="async" />
                 </span>
                 <span className="shop-category-card__copy">
                   <strong>{category.label}</strong>
@@ -260,9 +260,7 @@ export default function Home() {
 
             <div className="shop-products__content">
               {loading ? (
-                <div className="loader">
-                  <ScaleLoader color="#54C143" />
-                </div>
+                <Loader compact label="Učitavamo proizvode" />
               ) : sortedProducts.length === 0 ? (
                 <div className="shop-empty-state">
                   <strong>Trenutno nema proizvoda po ovom kriterijumu.</strong>

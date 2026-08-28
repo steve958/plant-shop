@@ -48,7 +48,7 @@ export default function Cart() {
         <section className="cart-items-wrapper" aria-label="Proizvodi u korpi">
           {cartItems.map((item) => (
             <article key={item.productId} className="cart-item">
-              <div className="cart-image-wrap"><img src={item.image || productPlaceholder} alt={item.name} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} /></div>
+              <div className="cart-image-wrap"><img src={item.image || productPlaceholder} alt={item.name} loading="lazy" decoding="async" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} /></div>
               <div className="cart-item-details">
                 <span className="cart-item-label">Proizvod</span>
                 <h2>{item.name}</h2>

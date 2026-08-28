@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import productPlaceholder from "../../assets/product-placeholder.svg";
@@ -31,6 +32,11 @@ export default function ProductCard({
   onClick,
   onAddToCart,
 }: ProductCardProps) {
+  const imageSource = product.images?.[0]?.trim() || productPlaceholder;
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  useEffect(() => setImageLoaded(false), [imageSource]);
+
   const hasDiscount = Boolean(
     product.onDiscount &&
       product.discountPrice &&
@@ -49,7 +55,7 @@ export default function ProductCard({
   return (
     <article className="catalog-card">
       <button
-        className="catalog-card__media"
+        className={`catalog-card__media ${imageLoaded ? "catalog-card__media--loaded" : ""}`}
         type="button"
         onClick={() => onClick(product.productId)}
         aria-label={`Pogledaj proizvod ${product.name}`}
@@ -58,9 +64,12 @@ export default function ProductCard({
           <span className="catalog-card__badge">−{discountPercent}%</span>
         )}
         <img
-          src={product.images?.[0]?.trim() || productPlaceholder}
+          src={imageSource}
           alt={product.name}
           loading="lazy"
+          decoding="async"
+          className={imageLoaded ? "is-loaded" : ""}
+          onLoad={() => setImageLoaded(true)}
           onError={handleImageError}
         />
         <span className="catalog-card__details">
