@@ -1,0 +1,47 @@
+:root {
+  --shop-green-900: #173d2b;
+  --shop-green-800: #22523a;
+  --shop-green-700: #287b35;
+  --shop-green-500: #54c143;
+  --shop-green-100: #eaf5e6;
+  --shop-ink: #20352a;
+  --shop-muted: #6b766f;
+  --shop-line: rgba(28, 75, 47, 0.12);
+  --shop-paper: #ffffff;
+  --shop-warm: #f8f7f1;
+  --shop-warm-strong: #f1f4eb;
+  --shop-shadow-sm: 0 10px 28px rgba(31, 63, 42, 0.07);
+  --shop-shadow-md: 0 20px 48px rgba(31, 63, 42, 0.12);
+  color: var(--shop-ink);
+  background: var(--shop-warm);
+  font-family: "Montserrat", "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: var(--shop-warm);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+img {
+  max-width: 100%;
+}
+
+::selection {
+  background: rgba(84, 193, 67, 0.28);
+  color: var(--shop-green-900);
+}

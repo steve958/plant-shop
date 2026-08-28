@@ -1,0 +1,37 @@
+{
+  "Zaštita bilja": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Pesticide%20spraying%20in%20spring.jpg?width=1400",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Pesticide_spraying_in_spring.jpg",
+    "author": "Maasaak",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  "Ishrana bilja": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Fertilizer%20applied%20to%20corn%20field.jpg?width=1400",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Fertilizer_applied_to_corn_field.jpg",
+    "author": "Lynn Betts / USDA Natural Resources Conservation Service",
+    "license": "Public domain (USDA NRCS)",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Fertilizer_applied_to_corn_field.jpg"
+  },
+  "Seme i sadnice": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Vegetable%20seeds.jpg?width=1400",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Vegetable_seeds.jpg",
+    "author": "Lynn Ketchum / Oregon State University",
+    "license": "CC BY-SA 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/"
+  },
+  "Pet program": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Catfood.jpg?width=1400",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Catfood.jpg",
+    "author": "Robdav69",
+    "license": "Public domain",
+    "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/"
+  },
+  "Garden oprema i alati": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Garden%20tools.jpg?width=1400",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Garden_tools.jpg",
+    "author": "Spitfire / Wikimedia Commons",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/"
+  }
+}

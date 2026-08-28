@@ -1,12 +1,10 @@
 // src/router.tsx
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import App from "./App";
 import Cart from "./components/Cart/Cart";
-import LogIn from "./components/LogIn/LogIn";
 import Home from "./components/Home/Home";
-import Register from "./components/Register/Register";
-import ProfilePage from "./components/UserProfile/ProfilePage";
 import AdminPanel from "./components/AdminPanel/AdminPanel";
+import AdminLogin from "./components/AdminLogin/AdminLogin";
 import PrivateRoute from "./components/PrivateRoute/PrivateRoute";
 import ItemDetails from "./components/ItemDetails/ItemDetails";
 import Order from "./components/Order/Order";
@@ -19,6 +17,10 @@ export const router = createBrowserRouter([
     element: <App />,
     children: [
       {
+        index: true,
+        element: <Navigate to="/početna" replace />,
+      },
+      {
         path: "/početna",
         element: <Home />,
       },
@@ -27,24 +29,12 @@ export const router = createBrowserRouter([
         element: <Cart />,
       },
       {
-        path: "/prijava",
-        element: <LogIn />,
-      },
-      {
-        path: "/registracija",
-        element: <Register />,
-      },
-      {
         path: "/potvrda",
         element: <Confirmation />,
       },
       {
-        path: "/profil",
-        element: (
-          <PrivateRoute>
-            <ProfilePage />
-          </PrivateRoute>
-        ),
+        path: "/admin/prijava",
+        element: <AdminLogin />,
       },
       {
         path: "/admin/panel",
@@ -61,6 +51,18 @@ export const router = createBrowserRouter([
       {
         path: "/poručivanje",
         element: <Order />,
+      },
+      {
+        path: "/prijava",
+        element: <Navigate to="/početna" replace />,
+      },
+      {
+        path: "/registracija",
+        element: <Navigate to="/početna" replace />,
+      },
+      {
+        path: "/profil",
+        element: <Navigate to="/početna" replace />,
       },
       {
         path: "/podkategorija/:subCategory",

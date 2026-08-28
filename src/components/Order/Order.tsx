@@ -1,104 +1,135 @@
-import { useLocation, useNavigate } from 'react-router-dom';
-import emailjs from '@emailjs/browser';
 import { useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import type { ReactNode } from 'react';
+import { useForm } from 'react-hook-form';
+import { useDispatch, useSelector } from 'react-redux';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { toast } from 'react-toastify';
+import { db } from '../firebase';
 import { RootState } from '../Redux/store';
 import { clearCart } from '../Redux/cartSlice';
-import "./Order.css"
+import productPlaceholder from '../../assets/product-placeholder.svg';
+import './Order.css';
 
-interface Customer {
-  email: string;
-  name: string;
-  number: string;
-  phoneNumber: string;
-  place: string;
-  postalCode: string;
-  street: string;
-  surname: string;
-}
+type GuestOrderData = {
+  name: string; surname: string; email: string; phone: string; place: string;
+  postalCode: string; street: string; number: string; note: string; privacyAccepted: boolean;
+};
+
+const previewCustomer: GuestOrderData = {
+  name: 'Marko', surname: 'Petrović', email: 'kupac@primer.rs', phone: '060 123 4567',
+  place: 'Šabac', postalCode: '15000', street: 'Primer ulica', number: '22',
+  note: 'Pozvati pre isporuke.', privacyAccepted: true,
+};
 
 const Order = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const checkoutPreview = import.meta.env.DEV && new URLSearchParams(location.search).get('preview') === 'checkout';
+  const cartItems = useSelector((state: RootState) => state.cart.items);
+  const items = checkoutPreview ? [
+    { productId: 'preview-1', name: 'Verimark 10 ml', image: productPlaceholder, price: 1490, quantity: 1 },
+    { productId: 'preview-2', name: 'Fertico Aminomax 80', image: productPlaceholder, price: 980, quantity: 2 },
+  ] : cartItems;
+  const { register, handleSubmit, formState: { errors } } = useForm<GuestOrderData>({
+    defaultValues: checkoutPreview ? previewCustomer : { note: '', privacyAccepted: false },
+  });
+  const [submitting, setSubmitting] = useState(false);
 
-  const { customer, total } = location.state as {
-    customer: Customer;
-    total: number;
-  } || {};
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const delivery = items.length ? 350 : 0;
+  const total = subtotal + delivery;
+  const formatPrice = (price: number) => new Intl.NumberFormat('sr-RS', {
+    style: 'currency', currency: 'RSD', minimumFractionDigits: 2, maximumFractionDigits: 2,
+  }).format(price);
 
-  const items = useSelector((state: RootState) => state.cart.items);
-
-  const [isEmailSent, setIsEmailSent] = useState(false);
-
-  const sendEmail = () => {
-    if (!items || items.length === 0) {
-      alert("Nema poručenih proizvoda.");
-      return;
-    }
-
-    const templateParams = {
-      customerEmail: customer?.email,
-      customerName: customer?.name,
-      customerNumber: customer?.number,
-      customerPhoneNumber: customer?.phoneNumber,
-      customerPlace: customer?.place,
-      customerPostalCode: customer?.postalCode,
-      customerStreet: customer?.street,
-      customerSurname: customer?.surname,
-      total,
-      items: items.map((item) => `Naziv: ${item.name}, Količina: ${item.quantity}, Cena: ${item.price}`).join('\n'),
-    };
-
-    emailjs.send('service_zf9aerk', 'template_gd7rbar', templateParams, '83kRfB6jgzmb21MF0')
-      .then(() => {
-        dispatch(clearCart());
-        setIsEmailSent(true);
-        navigate('/potvrda');
-      })
-      .catch((error) => {
-        console.error('Email sending error:', error);
-        alert(`Error: ${error.text || error.message}`);
+  const submitOrder = async (data: GuestOrderData) => {
+    if (!items.length || submitting || checkoutPreview) return;
+    setSubmitting(true);
+    const orderNumber = `PC-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${Date.now().toString().slice(-4)}`;
+    try {
+      await addDoc(collection(db, 'orders'), {
+        orderNumber,
+        customer: {
+          name: data.name.trim(), surname: data.surname.trim(), email: data.email.trim().toLowerCase(),
+          phone: data.phone.trim(), place: data.place.trim(), postalCode: data.postalCode.trim(),
+          street: data.street.trim(), number: data.number.trim(),
+        },
+        items: items.map((item) => ({
+          productId: item.productId, name: item.name, image: item.image || '',
+          price: item.price, quantity: item.quantity, lineTotal: item.price * item.quantity,
+        })),
+        totals: { subtotal, delivery, total },
+        customerNote: data.note.trim(),
+        status: 'new',
+        source: 'web-shop',
+        createdAt: serverTimestamp(),
       });
+      dispatch(clearCart());
+      navigate('/potvrda', { replace: true, state: { orderNumber } });
+    } catch (error) {
+      console.error('Order creation failed:', error);
+      toast.error('Porudžbina trenutno nije sačuvana. Pokušajte ponovo ili nas kontaktirajte.');
+      setSubmitting(false);
+    }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("sr-RS", {
-      style: "currency",
-      currency: "RSD",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(price);
-  };
+  if (!items.length) {
+    return <main className="order-container order-missing"><span className="order-eyebrow">Poručivanje</span><h1>Korpa je prazna</h1><p>Dodajte proizvode pre unosa podataka za dostavu.</p><button className="order-primary" onClick={() => navigate('/početna')}>Pogledaj proizvode</button></main>;
+  }
 
   return (
-    <div className="order-container">
-      <h2>Detalji porudžbine</h2>
-      {customer ? (
-        <div className="customer-info-wrapper">
-          <h3>Podaci o klijentu:</h3>
-          <div className="show-profile">
-            <p>Email: {customer.email}</p>
-            <p>Ime: {customer.name}</p>
-            <p>Broj: {customer.number}</p>
-            <p>Telefon: {customer.phoneNumber}</p>
-            <p>Mesto: {customer.place}</p>
-            <p>Poštanski broj: {customer.postalCode}</p>
-            <p>Ulica: {customer.street}</p>
-            <p>Prezime: {customer.surname}</p>
-            <h3>Ukupno za plaćanje:{formatPrice(total)}</h3>
-          </div>
+    <main className="order-container">
+      <header className="order-heading"><span className="order-eyebrow">Kupovina bez registracije</span><h1>Podaci za porudžbinu</h1><p>Unesite kontakt i adresu. Plant Centar će vas pozvati ili kontaktirati emailom radi konačne potvrde.</p></header>
+      {checkoutPreview && <div className="order-preview-banner"><strong>Pregled gostujuće kupovine</strong><span>Primer podaci su prikazani lokalno, a čuvanje porudžbine je isključeno.</span></div>}
+
+      <form className="order-layout" onSubmit={handleSubmit(submitOrder)} noValidate>
+        <div className="order-form-column">
+          <section className="order-customer">
+            <div className="order-section-heading"><span>01</span><div><h2>Kontakt podaci</h2><p>Koristimo ih samo za ovu porudžbinu</p></div></div>
+            <div className="order-form-grid">
+              <OrderField label="Ime" id="order-name" error={errors.name?.message}><input id="order-name" disabled={checkoutPreview || submitting} autoComplete="given-name" {...register('name', { required: 'Unesite ime' })} /></OrderField>
+              <OrderField label="Prezime" id="order-surname" error={errors.surname?.message}><input id="order-surname" disabled={checkoutPreview || submitting} autoComplete="family-name" {...register('surname', { required: 'Unesite prezime' })} /></OrderField>
+              <OrderField label="Telefon" id="order-phone" error={errors.phone?.message}><input id="order-phone" type="tel" disabled={checkoutPreview || submitting} autoComplete="tel" placeholder="06x xxx xxxx" {...register('phone', { required: 'Unesite broj telefona', minLength: { value: 7, message: 'Proverite broj telefona' } })} /></OrderField>
+              <OrderField label="Email" id="order-email" error={errors.email?.message}><input id="order-email" type="email" disabled={checkoutPreview || submitting} autoComplete="email" placeholder="ime@primer.rs" {...register('email', { required: 'Unesite email adresu' })} /></OrderField>
+            </div>
+          </section>
+
+          <section className="order-customer">
+            <div className="order-section-heading"><span>02</span><div><h2>Adresa za dostavu</h2><p>Podaci za slanje porudžbine</p></div></div>
+            <div className="order-form-grid order-address-grid">
+              <OrderField label="Mesto" id="order-place" error={errors.place?.message}><input id="order-place" disabled={checkoutPreview || submitting} autoComplete="address-level2" {...register('place', { required: 'Unesite mesto' })} /></OrderField>
+              <OrderField label="Poštanski broj" id="order-postal" error={errors.postalCode?.message}><input id="order-postal" disabled={checkoutPreview || submitting} inputMode="numeric" autoComplete="postal-code" {...register('postalCode', { required: 'Unesite poštanski broj' })} /></OrderField>
+              <OrderField label="Ulica" id="order-street" error={errors.street?.message}><input id="order-street" disabled={checkoutPreview || submitting} autoComplete="address-line1" {...register('street', { required: 'Unesite ulicu' })} /></OrderField>
+              <OrderField label="Broj" id="order-number" error={errors.number?.message}><input id="order-number" disabled={checkoutPreview || submitting} {...register('number', { required: 'Unesite broj' })} /></OrderField>
+              <OrderField label="Napomena za Plant Centar (opciono)" id="order-note" wide><textarea id="order-note" rows={3} disabled={checkoutPreview || submitting} placeholder="Termin poziva, napomena za dostavu..." {...register('note')} /></OrderField>
+            </div>
+          </section>
+
+          <section className="order-review">
+            <div className="order-section-heading"><span>03</span><div><h2>Proizvodi</h2><p>{items.length} {items.length === 1 ? 'stavka' : 'stavke'} u porudžbini</p></div></div>
+            <div className="order-items">{items.map((item) => <article key={item.productId} className="order-item"><img src={item.image || productPlaceholder} alt={item.name} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} /><div><h3>{item.name}</h3><p>Količina: {item.quantity}</p></div><strong>{formatPrice(item.price * item.quantity)}</strong></article>)}</div>
+          </section>
         </div>
-      ) : (
-        <p>Nema podataka o klijentu.</p>
-      )}
-      <div className="order-button-wrapper">
-        <button className="back-button" onClick={() => navigate(-1)}>Nazad</button>
-        <button className="order-button" onClick={sendEmail}>Poruči</button>
-        {isEmailSent && <p>Poruka je uspešno poslata!</p>}
-      </div>
-    </div>
+
+        <aside className="order-summary">
+          <span className="order-eyebrow">Pregled iznosa</span>
+          <dl><div><dt>Proizvodi</dt><dd>{formatPrice(subtotal)}</dd></div><div><dt>Dostava</dt><dd>{formatPrice(delivery)}</dd></div></dl>
+          <div className="order-total"><span>Ukupno</span><strong>{formatPrice(total)}</strong></div>
+          <label className="order-consent"><input type="checkbox" disabled={checkoutPreview || submitting} {...register('privacyAccepted', { required: 'Potvrdite saglasnost za obradu podataka' })} /><span>Saglasan/na sam da Plant Centar koristi unete podatke za obradu ove porudžbine.</span></label>
+          {errors.privacyAccepted && <span className="order-consent-error">{errors.privacyAccepted.message}</span>}
+          <button className="order-primary" type="submit" disabled={submitting || checkoutPreview}>{checkoutPreview ? 'Pregled — čuvanje isključeno' : submitting ? 'Čuvamo porudžbinu...' : 'Pošalji porudžbinu'}</button>
+          <button className="order-back" type="button" onClick={() => navigate('/korpa')} disabled={submitting}>Nazad u korpu</button>
+          <p className="order-contact-note">Ovo nije automatska naplata. Administrator potvrđuje dostupnost, dostavu i način plaćanja sa vama.</p>
+        </aside>
+      </form>
+    </main>
   );
 };
+
+function OrderField({ label, id, error, wide, children }: { label: string; id: string; error?: string; wide?: boolean; children: ReactNode }) {
+  return <div className={`order-field${wide ? ' order-field-wide' : ''}`}><label htmlFor={id}>{label}</label>{children}{error && <span>{error}</span>}</div>;
+}
 
 export default Order;

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" role="img" aria-labelledby="title description">
+  <title id="title">Slika proizvoda nije dostupna</title>
+  <description id="description">Plant Centar rezervna ilustracija proizvoda</description>
+  <rect width="640" height="480" rx="32" fill="#f6f7f1"/>
+  <circle cx="320" cy="204" r="88" fill="#e7f2e2"/>
+  <path d="M320 278c-5-52 6-100 40-141" fill="none" stroke="#2f7f43" stroke-width="14" stroke-linecap="round"/>
+  <path d="M350 171c5-48 39-77 86-79-3 47-33 78-86 79Z" fill="#54c143"/>
+  <path d="M326 221c-46-5-77-37-80-82 46 1 78 30 80 82Z" fill="#79cf69"/>
+  <text x="320" y="350" text-anchor="middle" fill="#173d2b" font-family="Arial, sans-serif" font-size="26" font-weight="700">Plant Centar</text>
+  <text x="320" y="386" text-anchor="middle" fill="#68756c" font-family="Arial, sans-serif" font-size="18">Slika proizvoda uskoro</text>
+</svg>

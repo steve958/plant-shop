@@ -1,5 +1,5 @@
 import "./SubCategoryStyle.css";
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { db } from "../firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
@@ -8,8 +8,11 @@ import { ScaleLoader } from "react-spinners";
 import Sort from "../Sort/Sort";
 import Filter from "../Filter/Filter";
 import { useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { RootState } from "../Redux/store";
+import { addToCart } from "../Redux/cartSlice";
 import ProductCard from "../ProductCard/ProductCard";
+import { toast } from "react-toastify";
 
 type Product = {
     productId: string;
@@ -21,6 +24,9 @@ type Product = {
     category: string;
     size: string[];
     manufacturer: string;
+    description?: string;
+    onDiscount?: boolean;
+    discountPrice?: number;
 };
 
 export default function SubCategoryPage() {
@@ -35,6 +41,7 @@ export default function SubCategoryPage() {
 
     // React Router
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const { subCategory } = useParams<{ subCategory: string }>();
 
     // Global search from Redux
@@ -117,18 +124,38 @@ export default function SubCategoryPage() {
         setSortBy(sort);
     };
 
-    const handleFilterChange = (filters: { manufacturers: string[] }) => {
+    const handleFilterChange = useCallback((filters: { manufacturers: string[] }) => {
         setManufacturerFilter(filters.manufacturers);
-    };
+    }, []);
 
     const handleProductClick = (productId: string) => {
         navigate(`/proizvod/${productId}`);
     };
 
+    const handleAddToCart = (productId: string) => {
+        const product = products.find((item) => item.productId === productId);
+        if (!product) return;
+
+        dispatch(addToCart({
+            productId: product.productId,
+            name: product.name,
+            image: product.images?.[0] || "",
+            price: product.onDiscount && product.discountPrice
+                ? product.discountPrice
+                : product.price,
+            quantity: 1,
+        }));
+        toast.success("Proizvod je dodat u korpu.");
+    };
+
     // 6) Render
     return (
         <div className="sub-category-page-container">
-            <h2 className="sub-category-title">{subCategory}</h2>
+            <div className="sub-category-heading">
+                <span>Plant Centar asortiman</span>
+                <h1>{subCategory}</h1>
+                <p>Provereni proizvodi uz stručnu podršku pri izboru i primeni.</p>
+            </div>
             {loading ? (
                 <div className="loader">
                     <ScaleLoader color="#54C143" />
@@ -163,7 +190,11 @@ export default function SubCategoryPage() {
                             >
                                 {sortedProducts.map((product) => (
                                     <Box key={product.productId}>
-                                        <ProductCard product={product} onClick={handleProductClick} />
+                                        <ProductCard
+                                            product={product}
+                                            onClick={handleProductClick}
+                                            onAddToCart={handleAddToCart}
+                                        />
                                     </Box>
                                 ))}
                             </Box>

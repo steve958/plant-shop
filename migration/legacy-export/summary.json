@@ -1,0 +1,53 @@
+{
+  "exportedAt": "2026-08-28T15:26:09.381Z",
+  "sourceProjectId": "web-shop-model",
+  "products": 211,
+  "images": 220,
+  "productsWithoutImages": 0,
+  "unavailableImages": 220,
+  "categories": [
+    "Garden oprema i alati",
+    "Ishrana bilja",
+    "Pet program",
+    "Seme i sadnice",
+    "Zaštita bilja"
+  ],
+  "subcategories": [
+    "Đubriva na bazi mikroelemenata",
+    "Fungicidi",
+    "Herbicidi",
+    "Hrana za kućne ljubimce",
+    "Insekticidi",
+    "Kristalna vodootopiva đubriva",
+    "Mašine",
+    "Mikrobiološka đubriva",
+    "Oprema za kućne ljubimce",
+    "Oprema za navodnjavanje",
+    "Organska đubriva i poboljšivači zemljišta",
+    "Organski preparati",
+    "Seme povrtarskih kultura",
+    "Seme ratarskih kultura",
+    "Tečna đubriva i biostimulatori"
+  ],
+  "manufacturers": [
+    "Agri Fortis",
+    "Agritalia",
+    "Agritalia ",
+    "Bacilomix",
+    "Bayer",
+    "Bejo Zaden",
+    "Clause",
+    "Fertico",
+    "Fito",
+    "Galenika Fitofarmacija",
+    "Gebi",
+    "Kimitec",
+    "KSW",
+    "Lebosol",
+    "Nesto",
+    "Nunhems",
+    "Premil",
+    "Valagro",
+    "Villager"
+  ]
+}

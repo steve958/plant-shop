@@ -1,0 +1,77 @@
+.catalog-sort {
+  position: relative;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--shop-line);
+}
+
+.catalog-sort__icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--shop-green-700);
+  background: var(--shop-green-100);
+}
+
+.catalog-sort__icon svg {
+  width: 21px;
+  height: 21px;
+}
+
+.catalog-sort__copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.catalog-sort__copy small {
+  color: #879089;
+  font-size: 0.61rem;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.catalog-sort__copy strong {
+  margin-top: 2px;
+  color: var(--shop-green-900);
+  font-size: 0.86rem;
+}
+
+.catalog-sort select {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 42px;
+  margin-top: 3px;
+  padding: 0 36px 0 12px;
+  border: 1px solid var(--shop-line);
+  border-radius: 11px;
+  outline: none;
+  appearance: none;
+  color: #4d5e53;
+  background: #f8faf7;
+  font-size: 0.73rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.catalog-sort select:focus {
+  border-color: rgba(84, 193, 67, 0.58);
+  box-shadow: 0 0 0 3px rgba(84, 193, 67, 0.1);
+}
+
+.catalog-sort__chevron {
+  position: absolute;
+  right: 10px;
+  bottom: 26px;
+  width: 19px;
+  height: 19px;
+  color: #77847b;
+  pointer-events: none;
+}

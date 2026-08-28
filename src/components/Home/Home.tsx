@@ -1,80 +1,87 @@
-import { useEffect, useState, useMemo } from "react";
-import { db } from "../firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { useSelector } from "react-redux";
-import { RootState } from "../Redux/store";
-import "./Home.css";
-import { ScaleLoader } from "react-spinners";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
+import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
+import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
+import { ScaleLoader } from "react-spinners";
+import { toast } from "react-toastify";
+import { db } from "../firebase";
+import { RootState } from "../Redux/store";
+import { addToCart } from "../Redux/cartSlice";
 import Sort from "../Sort/Sort";
-import Filter from "../Filter/Filter"; // <-- Your refactored Filter
+import Filter from "../Filter/Filter";
 import ProductCard from "../ProductCard/ProductCard";
-// Import MUI Carousel (using react-material-ui-carousel as an example)
-import Carousel from "react-material-ui-carousel";
+import heroImage from "../../assets/protect.jpg";
+import protectionIcon from "../../assets/zastita/insekticidi-Green.png";
+import nutritionIcon from "../../assets/ishrana/kristalna-Green.png";
+import seedIcon from "../../assets/seme/povrce-Green.png";
+import gardenIcon from "../../assets/garden/masine-Green.png";
+import "./Home.css";
 
 type Product = {
   productId: string;
   name: string;
   price: number;
   images: string[];
-  type: string;
   category: string;
-  gender: string;
-  size: string[];
   manufacturer: string;
+  description?: string;
   onDiscount?: boolean;
   discountPrice?: number;
 };
 
+const featuredCategories = [
+  {
+    label: "Zaštita bilja",
+    description: "Preparati za pouzdanu i odgovornu zaštitu useva.",
+    route: "/podkategorija/Insekticidi",
+    icon: protectionIcon,
+  },
+  {
+    label: "Ishrana bilja",
+    description: "Programi ishrane za zdrav rast i stabilan prinos.",
+    route: "/podkategorija/Kristalna vodootopiva đubriva",
+    icon: nutritionIcon,
+  },
+  {
+    label: "Seme i sadnice",
+    description: "Proveren izbor za profesionalnu i hobi proizvodnju.",
+    route: "/podkategorija/Seme povrtarskih kultura",
+    icon: seedIcon,
+  },
+  {
+    label: "Garden program",
+    description: "Alati, mašine i oprema za dvorište i imanje.",
+    route: "/podkategorija/Mašine",
+    icon: gardenIcon,
+  },
+];
+
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Sorting
-  const [sortBy, setSortBy] = useState<string>("nameAsc");
-
-  // Filter: list of manufacturers selected by the user
+  const [sortBy, setSortBy] = useState("nameAsc");
   const [manufacturerFilter, setManufacturerFilter] = useState<string[]>([]);
-
-  // Global search query from Redux
   const searchQuery = useSelector((state: RootState) => state.search.query);
-
-  // For navigation on product click
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  // Example carousel items (replace with your own image URLs)
-  const carouselItems = [
-    {
-      image: "https://www.agromarket.rs/files/images/Srbija%20Baneri%20Mart%202025_%20L%2038%201920x656%20copy%206.jpg",
-      alt: "Carousel Image 1",
-    },
-    {
-      image: "https://www.agromarket.rs/files/images/Srbija%20Baneri%20Mart%202025_VBS%201620%201920x656%20copy%204.jpg",
-      alt: "Carousel Image 2",
-    },
-    {
-      image: "https://www.agromarket.rs/files/files/__TIGAR%20lovacke_1920x656.jpg",
-      alt: "Carousel Image 3",
-    },
-  ];
-
-  // 1) Fetch only discounted products from Firestore on mount
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const q = query(
+        const productsQuery = query(
           collection(db, "products"),
           where("onDiscount", "==", true)
         );
-        const querySnapshot = await getDocs(q);
-
-        // Map each doc into a Product object
-        const fetchedProducts: Product[] = querySnapshot.docs.map((doc) => ({
-          productId: doc.id,
-          ...doc.data(),
+        const querySnapshot = await getDocs(productsQuery);
+        const fetchedProducts = querySnapshot.docs.map((document) => ({
+          productId: document.id,
+          ...document.data(),
         })) as Product[];
-
         setProducts(fetchedProducts);
       } catch (error) {
         console.error("Error fetching products: ", error);
@@ -86,126 +93,197 @@ export default function Home() {
     fetchProducts();
   }, []);
 
-  // 2) Calculate unique manufacturer list for the Filter
-  const availableManufacturers = useMemo(() => {
-    const uniqueSet = new Set<string>();
-    products.forEach((p) => {
-      if (p.manufacturer) {
-        uniqueSet.add(p.manufacturer);
-      }
-    });
-    return Array.from(uniqueSet);
-  }, [products]);
+  const availableManufacturers = useMemo(
+    () =>
+      Array.from(
+        new Set(products.map((product) => product.manufacturer).filter(Boolean))
+      ),
+    [products]
+  );
 
-  // 3) Filter
-  const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
+  const sortedProducts = useMemo(() => {
+    const filteredProducts = products.filter((product) => {
       const matchesSearch = product.name
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
-
-      // If user hasn't selected any manufacturers, we show all
       const matchesManufacturer =
         manufacturerFilter.length === 0 ||
         manufacturerFilter.includes(product.manufacturer);
-
       return matchesSearch && matchesManufacturer;
     });
-  }, [products, searchQuery, manufacturerFilter]);
 
-  // 4) Sort
-  const sortedProducts = useMemo(() => {
-    const sorted = [...filteredProducts];
+    const getEffectivePrice = (product: Product) =>
+      product.onDiscount && product.discountPrice
+        ? product.discountPrice
+        : product.price;
 
-    // Helper to get effective price:
-    const getEffectivePrice = (p: Product) =>
-      p.onDiscount && p.discountPrice ? p.discountPrice : p.price;
+    return [...filteredProducts].sort((first, second) => {
+      switch (sortBy) {
+        case "nameDesc":
+          return second.name.localeCompare(first.name);
+        case "priceAsc":
+          return getEffectivePrice(first) - getEffectivePrice(second);
+        case "priceDesc":
+          return getEffectivePrice(second) - getEffectivePrice(first);
+        default:
+          return first.name.localeCompare(second.name);
+      }
+    });
+  }, [products, searchQuery, manufacturerFilter, sortBy]);
 
-    switch (sortBy) {
-      case "nameDesc":
-        sorted.sort((a, b) => b.name.localeCompare(a.name));
-        break;
-      case "priceAsc":
-        sorted.sort((a, b) => getEffectivePrice(a) - getEffectivePrice(b));
-        break;
-      case "priceDesc":
-        sorted.sort((a, b) => getEffectivePrice(b) - getEffectivePrice(a));
-        break;
-      default: // nameAsc
-        sorted.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-    }
+  const handleAddToCart = (productId: string) => {
+    const product = products.find((item) => item.productId === productId);
+    if (!product) return;
 
-    return sorted;
-  }, [filteredProducts, sortBy]);
-
-  // 5) Handlers for Sort/Filter
-  const handleSortChange = (sort: string) => {
-    setSortBy(sort);
+    dispatch(
+      addToCart({
+        productId: product.productId,
+        name: product.name,
+        image: product.images?.[0] || "",
+        price:
+          product.onDiscount && product.discountPrice
+            ? product.discountPrice
+            : product.price,
+        quantity: 1,
+      })
+    );
+    toast.success("Proizvod je dodat u korpu.");
   };
 
-  const handleFilterChange = (filters: { manufacturers: string[] }) => {
-    setManufacturerFilter(filters.manufacturers);
-  };
+  const handleFilterChange = useCallback(
+    (filters: { manufacturers: string[] }) => {
+      setManufacturerFilter(filters.manufacturers);
+    },
+    []
+  );
 
-  // 6) Navigate on product click
-  const handleProductClick = (productId: string) => {
-    navigate(`/proizvod/${productId}`);
-  };
-
-  // 7) Render
   return (
-    <div className="home-page-container">
-      {loading ? (
-        <div className="loader">
-          <ScaleLoader color="#54C143" />
-        </div>
-      ) : (
-        <>
-          {/* Carousel Section */}
-          <div className="carousel-container">
-            <Carousel indicators={true} navButtonsAlwaysVisible={true}>
-              {carouselItems.map((item, index) => (
-                <img
-                  key={index}
-                  src={item.image}
-                  alt={item.alt}
-                  className="carousel-image"
-                />
-              ))}
-            </Carousel>
-          </div>
-          <h2 className="sub-category-title">Prizvodi na akciji</h2>
-          {/* Content Section: Sidebar + Product Grid */}
-          <div className="home-page-wrapper">
-            <div className="sidebar">
-              <div className="sort-filter-wrapper">
-                <Sort onSortChange={handleSortChange} />
-                <Filter
-                  onFilterChange={handleFilterChange}
-                  availableManufacturers={availableManufacturers}
-                />
-              </div>
+    <main className="shop-home">
+      <section className="shop-hero">
+        <div className="shop-home__shell shop-hero__grid">
+          <div className="shop-hero__content">
+            <span className="shop-eyebrow">Znanje. Posvećenost. Uspeh.</span>
+            <h1>Sve što vašoj proizvodnji treba, na jednom mestu.</h1>
+            <p>
+              Proveren asortiman, stručna podrška i proizvodi iza kojih stoji
+              Plant Centar iskustvo.
+            </p>
+            <div className="shop-hero__actions">
+              <a className="shop-button shop-button--primary" href="#akcija">
+                Pogledajte ponudu
+                <ArrowForwardIcon aria-hidden="true" />
+              </a>
+              <a
+                className="shop-button shop-button--secondary"
+                href="https://www.plantcentar.com/kontakt"
+              >
+                Pitajte stručnjaka
+              </a>
             </div>
-            <div className="home-main-content">
-              <div className="home-products-grid">
-                {sortedProducts.length === 0 ? (
-                  <div className="empty-message">
-                  </div>
-                ) : (
-                  sortedProducts.map((product) => (
+          </div>
+          <figure className="shop-hero__visual">
+            <img src={heroImage} alt="Mlada biljka u kvalitetno pripremljenom zemljištu" />
+            <figcaption>
+              <span>Plant Centar preporuka</span>
+              <strong>Pravi proizvod u pravo vreme</strong>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section className="shop-assurances" aria-label="Prednosti kupovine">
+        <div className="shop-home__shell shop-assurances__grid">
+          <div>
+            <VerifiedOutlinedIcon aria-hidden="true" />
+            <span><strong>Proveren asortiman</strong>Originalni proizvodi pouzdanih brendova</span>
+          </div>
+          <div>
+            <SupportAgentOutlinedIcon aria-hidden="true" />
+            <span><strong>Stručna podrška</strong>Pomoć pri izboru i primeni proizvoda</span>
+          </div>
+          <div>
+            <LocalShippingOutlinedIcon aria-hidden="true" />
+            <span><strong>Sigurna dostava</strong>Pažljivo pakovanje i isporuka širom Srbije</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="shop-categories">
+        <div className="shop-home__shell">
+          <header className="shop-section-heading">
+            <div>
+              <span className="shop-eyebrow">Izdvajamo iz ponude</span>
+              <h2>Izaberite program</h2>
+            </div>
+            <p>Brži put do proizvoda prema poslu koji danas obavljate.</p>
+          </header>
+          <div className="shop-categories__grid">
+            {featuredCategories.map((category) => (
+              <button
+                key={category.label}
+                className="shop-category-card"
+                type="button"
+                onClick={() => navigate(category.route)}
+              >
+                <span className="shop-category-card__icon">
+                  <img src={category.icon} alt="" />
+                </span>
+                <span className="shop-category-card__copy">
+                  <strong>{category.label}</strong>
+                  <small>{category.description}</small>
+                </span>
+                <ArrowForwardIcon aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="shop-products" id="akcija">
+        <div className="shop-home__shell">
+          <header className="shop-section-heading shop-section-heading--products">
+            <div>
+              <span className="shop-eyebrow">Aktuelna ponuda</span>
+              <h2>Proizvodi na akciji</h2>
+            </div>
+            <p>Sezonski izbor proizvoda sa povoljnijim cenama.</p>
+          </header>
+
+          <div className="shop-products__layout">
+            <aside className="shop-filter-panel">
+              <Sort onSortChange={setSortBy} />
+              <Filter
+                onFilterChange={handleFilterChange}
+                availableManufacturers={availableManufacturers}
+              />
+            </aside>
+
+            <div className="shop-products__content">
+              {loading ? (
+                <div className="loader">
+                  <ScaleLoader color="#54C143" />
+                </div>
+              ) : sortedProducts.length === 0 ? (
+                <div className="shop-empty-state">
+                  <strong>Trenutno nema proizvoda po ovom kriterijumu.</strong>
+                  <span>Promenite filter ili pokušajte drugu pretragu.</span>
+                </div>
+              ) : (
+                <div className="home-products-grid">
+                  {sortedProducts.map((product) => (
                     <ProductCard
                       key={product.productId}
                       product={product}
-                      onClick={handleProductClick}
+                      onClick={(productId) => navigate(`/proizvod/${productId}`)}
+                      onAddToCart={handleAddToCart}
                     />
-                  ))
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-        </>
-      )}
-    </div>
+        </div>
+      </section>
+    </main>
   );
 }

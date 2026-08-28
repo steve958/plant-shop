@@ -1,45 +1,13 @@
-.confirmation-container {
-    width: 100%;
-    min-height: 75vh;
-    display: flex;
-    align-items: center;
-    flex-direction: column;
-    padding: 50px;
-    gap: 20px;
-}
-
-.confirmation-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.7);
-    border-radius: 10px;
-    width: 500px;
-    height: 500px;
-    gap: 30px;
-}
-
-.confirmation-home-button {
-    height: 40px;
-    background-color: #54C143;
-    width: 100px;
-    border-radius: 5px;
-    border: none;
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
-    padding: 5px;
-}
-
-.confirmation-home-button:hover {
-    background-color: #09e0b5;
-    cursor: pointer;
-}
-
-.checked {
-    color: #54C143;
-}
-
-@media (max-width: 550px) {
-    .confirmation-wrapper {
-        width: 350px;
-    }
-}
+.confirmation-container { display: grid; width: min(720px, calc(100% - 32px)); min-height: 600px; margin: 52px auto 80px; place-items: center; }
+.confirmation-wrapper { display: flex; width: 100%; box-sizing: border-box; align-items: center; flex-direction: column; padding: clamp(38px, 7vw, 70px); border: 1px solid var(--shop-line); border-radius: 28px; background: #fff; text-align: center; box-shadow: var(--shop-shadow-md); }
+.confirmation-icon { display: grid; width: 92px; height: 92px; margin-bottom: 23px; place-items: center; border-radius: 50%; background: var(--shop-green-100); }
+.confirmation-icon svg { color: var(--shop-green-700); font-size: 54px; }
+.confirmation-wrapper > span { color: var(--shop-green-700); font-size: .72rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+.confirmation-wrapper h1 { margin: 12px 0 14px; color: var(--shop-green-900); font-size: clamp(2.3rem, 6vw, 4rem); letter-spacing: -.055em; }
+.confirmation-wrapper > p { max-width: 500px; margin: 0; color: var(--shop-muted); font-size: .88rem; line-height: 1.75; }
+.confirmation-number { display: flex; align-items: center; gap: 12px; margin-top: 23px; padding: 11px 15px; border: 1px solid var(--shop-line); border-radius: 10px; background: #fbfcf9; }.confirmation-number span { color: var(--shop-muted); font-size: .67rem; }.confirmation-number strong { color: var(--shop-green-900); font-size: .78rem; letter-spacing: .04em; }
+.confirmation-note { display: flex; max-width: 480px; flex-direction: column; gap: 7px; margin: 30px 0; padding: 18px 22px; border-radius: 13px; background: #f6f7f2; color: var(--shop-muted); font-size: .76rem; line-height: 1.6; }
+.confirmation-note strong { color: var(--shop-green-900); }
+.confirmation-home-button { min-height: 50px; padding: 0 25px; border: 0; border-radius: 11px; background: var(--shop-green-700); color: #fff; font-weight: 800; cursor: pointer; box-shadow: 0 10px 24px rgba(40,123,53,.19); }
+.confirmation-home-button:hover { background: var(--shop-green-800); transform: translateY(-1px); }
+@media (max-width: 500px) { .confirmation-container { width: calc(100% - 20px); margin-top: 28px; } .confirmation-wrapper { border-radius: 20px; padding: 38px 22px; } }

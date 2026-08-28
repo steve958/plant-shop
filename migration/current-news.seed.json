@@ -1,0 +1,42 @@
+[
+  {
+    "newsId": "rezidba-borovnice-2025",
+    "title": "Značaj pravilne rezidbe borovnice",
+    "description": "Visokožbunasta borovnica predstavlja relativno novu kulturu na našim prostorima, koja je u poslednjih nekoliko godina napravila značajnu ekspanziju u vidu podizanja zasada i širenja tržišta njenog ploda. Kao i svaka voćarska kultura, i ona zahteva određene pomotehničke mere, gde se pored pravilne ishrane i zaštite istakla rezidba kao jedan od ograničavajućih faktora u gajenju ove kulture. Pravilna rezidba zahteva, dobro poznavanje morfoloških osobina same biljke. S obzirom da je borovnica žbunasta biljka, potrebno je napraviti pravilnu formu žbuna, što je naročito bitno u prvoj sezoni nakon sadnje. Početna rezidba se zasniva odabirom 3-5 glavnih nosećih grana, s tim da se prethodnih nekoliko sezona veoma dobro pokazalo ostavljanje većeg broja grana koje u prvim godinama razvoja daju kvalitetniji plod. Kroz našu praksu, teorija da se prve godine skida plod u korist vegetativne mase se nije pokazala kao najbolje rešenje, iz razloga što ostavljena količina generativnih pupoljaka na samoj biljci daje signal za njen brži rast i razvoj u toku tekuće sezone, a količina ploda u prvoj berbi naravno nije zanemarljiva. Dalji tok rezidbe u sezonama nakon formiranja žbuna zavisi od niza faktora kao što su sortiment, podloga u kojoj se biljka gaji (zemljište ili supstrat), sklop biljaka po jedinici površine kao i sam rodni potencijal biljke. Najbitnija stvar u rezidbi već oformljenog žbuna borovnice koji ima pravilnu formu pehara, ogleda se u pravilnom balansu. Potrebno je i konstantno podmlađivati žbun i održati ga do 180 cm visine, što se pokazalo kao optimalna visina biljke za pravilno plodonošenje i dobijanje kvalitetnih plodova. Ovo su samo neke smernice i naše iskustvo koje pokušavamo da vam prenesemo, dok naravno svaki zasad kao i biljka ima određene karakteristike koje zahtevaju pojedinačan pristup, gde vam naša stručna služba stoji na raspolaganju.",
+    "author": "Dipl. inž. zaštite bilja Đorđe Arsenović",
+    "published": true,
+    "publishedAt": "2025-02-02T10:00:00.000Z",
+    "localImage": "src/assets/news/rezidba-borovnice.jpeg",
+    "externalUrl": ""
+  },
+  {
+    "newsId": "agrosvet-specijal-2025",
+    "title": "Agrosvet časopis",
+    "description": "Na ovom linku možete pogledati novo izdanje časopisa Agrosvet.",
+    "author": "",
+    "published": true,
+    "publishedAt": "2025-01-25T10:00:00.000Z",
+    "localImage": "src/assets/news/january.jpg",
+    "externalUrl": "https://www.agromarketsrbija.rs/files/deals/Agrosvet_specijal_2025_web_.pdf"
+  },
+  {
+    "newsId": "zastita-voca-pred-zimu",
+    "title": "Zaštita voćnih kultura pred zimu",
+    "description": "Na teritoriji Republike Srbije većina voćnih kultura nalazi se u fazi jesenjeg opadanja lista. Preporučujemo poljoprivrednim proizvođačima redovno praćenje svojih zasada kao i praćenje vremenskih prilika da bi pravovremeno uradili zimski tretman bakarnim preparatima. Ovim tretmanom omogućavamo biljkama da kako u zimski, tako i u prolećni period uđu sa što manjim infektivnim potencijalom najznačajnijih gljivičnih oboljenja kao što su monilioze, bakterioze i septorioze. Takođe uz bakarne preparate poželjno je dodati i insekticide na bazi mineralnog ulja zbog smanjenja potencijala prezimljujućih štetočina. Tretmane je poželjno uraditi u fazi kada biljke odbace 70% lisne mase uz dnevne temperature preko 10 stepeni celzijusa. Takođe je veoma bitna norma utroška vode za određenu voćnu vrstu, kako bi se omogućila adekvatna pokrivenost biljaka hemijskim sredstvom.",
+    "author": "Dipl. inž. zaštite bilja Đorđe Arsenović",
+    "published": true,
+    "publishedAt": "2024-10-24T10:00:00.000Z",
+    "localImage": "src/assets/news/winterspray.jpg",
+    "externalUrl": ""
+  },
+  {
+    "newsId": "agrosvet-138",
+    "title": "Agrosvet časopis",
+    "description": "Na ovom linku možete pogledati novo izdanje časopisa Agrosvet.",
+    "author": "",
+    "published": true,
+    "publishedAt": "2024-09-08T10:00:00.000Z",
+    "localImage": "src/assets/news/november.jpg",
+    "externalUrl": "https://www.agromarketsrbija.rs/files/deals/Agrosvet_138_web.pdf"
+  }
+]

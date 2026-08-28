@@ -1,105 +1,81 @@
-import { useSelector, useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { RootState } from "../Redux/store";
-import { removeFromCart } from "../Redux/cartSlice";
-import DeleteIcon from "@mui/icons-material/Delete";
-import "./Cart.css";
-import { Button } from "@mui/material";
+import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { RootState } from '../Redux/store';
+import { decreaseQuantity, increaseQuantity, removeFromCart } from '../Redux/cartSlice';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
+import productPlaceholder from '../../assets/product-placeholder.svg';
+import './Cart.css';
 
 export default function Cart() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const cartItems = useSelector((state: RootState) => state.cart.items);
-  const user = useSelector((state: RootState) => state.auth.user);
 
-  const handleRemoveItem = (productId: string) => {
-    dispatch(removeFromCart(productId));
-  };
-
-  // Calculate total price (price multiplied by quantity)
-  const totalPrice = cartItems.reduce(
-    (total, item) => total + item.price * item.quantity,
-    0
-  );
-  const deliveryCost = 350.0;
-  const finalTotal = totalPrice + deliveryCost;
-
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat("sr-RS", {
-      style: "currency",
-      currency: "RSD",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(price);
+  const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+  const deliveryCost = cartItems.length ? 350 : 0;
+  const finalTotal = subtotal + deliveryCost;
+  const formatPrice = (price: number) => new Intl.NumberFormat('sr-RS', {
+    style: 'currency', currency: 'RSD', minimumFractionDigits: 2, maximumFractionDigits: 2,
+  }).format(price);
 
   const handleOrder = () => {
-    const orderDetails = {
-      customer: {
-        email: user?.email,
-        name: user?.name,
-        number: user?.number,
-        phoneNumber: user?.phoneNumber,
-        place: user?.place,
-        postalCode: user?.postalCode,
-        street: user?.street,
-        surname: user?.surname,
-      },
-      total: finalTotal,
-    };
-    navigate("/poručivanje", { state: orderDetails });
+    navigate('/poručivanje', { state: { total: finalTotal } });
   };
 
+  if (!cartItems.length) {
+    return (
+      <main className="cart-container cart-empty">
+        <span className="cart-eyebrow">Vaša korpa</span>
+        <div className="cart-empty-icon" aria-hidden="true">0</div>
+        <h1>Korpa je trenutno prazna</h1>
+        <p>Istražite naš asortiman i dodajte proizvode koji su vam potrebni.</p>
+        <button className="cart-primary-button" onClick={() => navigate('/početna')}>Pogledaj proizvode</button>
+      </main>
+    );
+  }
+
   return (
-    <div className="cart-container">
-      <h2>Vaša korpa</h2>
-      {!user ? (
-        <p>Morate biti prijavljeni da biste videli vašu korpu.</p>
-      ) : cartItems.length === 0 ? (
-        <p>Vaša korpa je prazna</p>
-      ) : (
-        <div className="cart-items-wrapper">
+    <main className="cart-container">
+      <header className="cart-heading">
+        <div><span className="cart-eyebrow">Pregled kupovine</span><h1>Vaša korpa</h1></div>
+        <p>{cartItems.length} {cartItems.length === 1 ? 'proizvod' : 'proizvoda'} u korpi</p>
+      </header>
+
+      <div className="cart-login-notice"><div><strong>Kupujete bez registracije.</strong><span>U sledećem koraku unesite samo kontakt i adresu za ovu porudžbinu.</span></div></div>
+
+      <div className="cart-layout">
+        <section className="cart-items-wrapper" aria-label="Proizvodi u korpi">
           {cartItems.map((item) => (
-            <div key={item.productId} className="cart-item">
-              <img src={item.image} alt={item.name} />
+            <article key={item.productId} className="cart-item">
+              <div className="cart-image-wrap"><img src={item.image || productPlaceholder} alt={item.name} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} /></div>
               <div className="cart-item-details">
-                <p className="cart-item-name">{item.name}</p>
-                <p className="cart-item-quantity">Količina: {item.quantity}</p>
-                <p className="cart-item-price">
-                  Cena: {formatPrice(item.price * item.quantity)}
-                </p>
+                <span className="cart-item-label">Proizvod</span>
+                <h2>{item.name}</h2>
+                <p className="cart-unit-price">{formatPrice(item.price)} / kom</p>
+                <div className="cart-item-actions">
+                  <div className="cart-quantity" aria-label={`Količina za ${item.name}`}>
+                    <button aria-label="Smanji količinu" onClick={() => dispatch(decreaseQuantity(item.productId))}>−</button>
+                    <span aria-live="polite">{item.quantity}</span>
+                    <button aria-label="Povećaj količinu" onClick={() => dispatch(increaseQuantity(item.productId))}>+</button>
+                  </div>
+                  <button className="cart-remove" onClick={() => dispatch(removeFromCart(item.productId))}><DeleteOutlineIcon fontSize="small" /> Ukloni</button>
+                </div>
               </div>
-              <div
-                className="cart-delete-button"
-                onClick={() => handleRemoveItem(item.productId)}
-                aria-label="delete"
-              >
-                <DeleteIcon sx={{ fontSize: 35 }} />
-              </div>
-            </div>
+              <strong className="cart-line-price">{formatPrice(item.price * item.quantity)}</strong>
+            </article>
           ))}
-          <div className="total-price-container">
-            <h4>Ukupna cena: {formatPrice(totalPrice)}</h4>
-            <h4>Troškovi dostave: {formatPrice(deliveryCost)}</h4>
-            <h3>Ukupno za plaćanje: {formatPrice(finalTotal)}</h3>
-          </div>
-          <div className="cart-button-wrapper">
-            <Button
-              variant="contained"
-              className="to-home-button"
-              onClick={() => navigate("/početna")}
-            >
-              Početna
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleOrder}
-              className="order-button"
-            >
-              Poruči
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
+          <button className="cart-continue" onClick={() => navigate('/početna')}>← Nastavi kupovinu</button>
+        </section>
+
+        <aside className="cart-summary">
+          <span className="cart-eyebrow">Sažetak</span><h2>Pregled porudžbine</h2>
+          <dl><div><dt>Vrednost proizvoda</dt><dd>{formatPrice(subtotal)}</dd></div><div><dt>Dostava</dt><dd>{formatPrice(deliveryCost)}</dd></div></dl>
+          <div className="cart-total"><span>Ukupno</span><strong>{formatPrice(finalTotal)}</strong><small>PDV je uračunat u cenu</small></div>
+          <button className="cart-primary-button" onClick={handleOrder}>Unesite podatke za dostavu</button>
+          <div className="cart-delivery"><LocalShippingOutlinedIcon /><span><strong>Dostava širom Srbije</strong>Rok i dostupnost potvrđuje naš tim.</span></div>
+        </aside>
+      </div>
+    </main>
   );
 }

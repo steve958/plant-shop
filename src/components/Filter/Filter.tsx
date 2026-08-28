@@ -1,80 +1,149 @@
-import React, { useState, useEffect } from "react";
-import FilterAltIcon from "@mui/icons-material/FilterAlt";
-import { Checkbox, FormControlLabel, Box, Typography, Collapse } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import CloseIcon from "@mui/icons-material/Close";
 import "./Filter.css";
 
 type FilterProps = {
-  // The parent passes the current manufacturer list,
-  // derived from the up-to-date products array
   availableManufacturers: string[];
-
-  // When the user toggles a manufacturer checkbox,
-  // we notify the parent with the selected list
   onFilterChange: (filters: { manufacturers: string[] }) => void;
 };
 
-const Filter: React.FC<FilterProps> = ({
-  availableManufacturers,
-  onFilterChange,
-}) => {
+const Filter = ({ availableManufacturers, onFilterChange }: FilterProps) => {
   const [selectedManufacturers, setSelectedManufacturers] = useState<string[]>([]);
-  const [drawerOpen, setDrawerOpen] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(() =>
+    typeof window === "undefined"
+      ? true
+      : window.matchMedia("(min-width: 761px)").matches
+  );
 
-  // Whenever the parent changes the availableManufacturers list,
-  // decide how to update the local "selected" list.
-  // Options:
-  // 1) Reset entirely (setSelectedManufacturers([]))
-  // 2) Keep only those previously selected if they still exist in the new list
-  //    (the example below demonstrates the second approach)
   useEffect(() => {
-    setSelectedManufacturers((prev) =>
-      prev.filter((m) => availableManufacturers.includes(m))
+    const availableSelection = selectedManufacturers.filter((manufacturer) =>
+      availableManufacturers.includes(manufacturer)
     );
-  }, [availableManufacturers]);
 
-  // Toggle selection
-  const handleCheckboxChange = (manufacturer: string) => {
-    setSelectedManufacturers((prev) => {
-      let newSelection;
-      if (prev.includes(manufacturer)) {
-        newSelection = prev.filter((m) => m !== manufacturer);
-      } else {
-        newSelection = [...prev, manufacturer];
-      }
+    if (availableSelection.length !== selectedManufacturers.length) {
+      setSelectedManufacturers(availableSelection);
+      onFilterChange({ manufacturers: availableSelection });
+    }
+  }, [availableManufacturers, onFilterChange, selectedManufacturers]);
 
-      // Notify the parent about the new selection
-      onFilterChange({ manufacturers: newSelection });
-      return newSelection;
-    });
+  const visibleManufacturers = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLocaleLowerCase("sr-Latn");
+    return [...availableManufacturers]
+      .sort((first, second) => first.localeCompare(second, "sr"))
+      .filter((manufacturer) =>
+        manufacturer.toLocaleLowerCase("sr-Latn").includes(normalizedSearch)
+      );
+  }, [availableManufacturers, searchTerm]);
+
+  const updateSelection = (nextSelection: string[]) => {
+    setSelectedManufacturers(nextSelection);
+    onFilterChange({ manufacturers: nextSelection });
+  };
+
+  const toggleManufacturer = (manufacturer: string) => {
+    const nextSelection = selectedManufacturers.includes(manufacturer)
+      ? selectedManufacturers.filter((item) => item !== manufacturer)
+      : [...selectedManufacturers, manufacturer];
+    updateSelection(nextSelection);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    updateSelection([]);
   };
 
   return (
-    <Box className="filter-container">
-      <Box className="filter-header" onClick={() => setDrawerOpen(!drawerOpen)}>
-        <FilterAltIcon color="primary" />
-        <Typography variant="h6" component="span" sx={{ ml: 1 }}>
-          Proizvođač
-        </Typography>
-      </Box>
+    <section className="catalog-filter" aria-label="Filteri proizvoda">
+      <button
+        className="catalog-filter__header"
+        type="button"
+        onClick={() => setDrawerOpen((open) => !open)}
+        aria-expanded={drawerOpen}
+      >
+        <span className="catalog-filter__header-icon">
+          <FilterAltOutlinedIcon aria-hidden="true" />
+        </span>
+        <span className="catalog-filter__header-copy">
+          <small>Filteri</small>
+          <strong>Proizvođač</strong>
+        </span>
+        {selectedManufacturers.length > 0 && (
+          <span className="catalog-filter__count">
+            {selectedManufacturers.length}
+          </span>
+        )}
+        <ExpandMoreIcon
+          className={`catalog-filter__chevron${drawerOpen ? " is-open" : ""}`}
+          aria-hidden="true"
+        />
+      </button>
 
-      <Collapse in={drawerOpen} timeout="auto" unmountOnExit>
-        <Box className="filter-options">
-          {availableManufacturers?.map((m) => (
-            <FormControlLabel
-              key={m}
-              control={
-                <Checkbox
-                  checked={selectedManufacturers.includes(m)}
-                  onChange={() => handleCheckboxChange(m)}
-                  color="primary"
-                />
-              }
-              label={m}
+      {drawerOpen && (
+        <div className="catalog-filter__body">
+          {selectedManufacturers.length > 0 && (
+            <div className="catalog-filter__selected" aria-label="Aktivni filteri">
+              {selectedManufacturers.map((manufacturer) => (
+                <button
+                  key={manufacturer}
+                  type="button"
+                  onClick={() => toggleManufacturer(manufacturer)}
+                  title={`Ukloni filter ${manufacturer}`}
+                >
+                  {manufacturer}
+                  <CloseIcon aria-hidden="true" />
+                </button>
+              ))}
+            </div>
+          )}
+
+          <label className="catalog-filter__search">
+            <SearchOutlinedIcon aria-hidden="true" />
+            <span>Pretražite proizvođače</span>
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Pronađite brend..."
             />
-          ))}
-        </Box>
-      </Collapse>
-    </Box>
+          </label>
+
+          <div className="catalog-filter__options">
+            {visibleManufacturers.length > 0 ? (
+              visibleManufacturers.map((manufacturer) => (
+                <label key={manufacturer} className="catalog-filter__option">
+                  <input
+                    type="checkbox"
+                    checked={selectedManufacturers.includes(manufacturer)}
+                    onChange={() => toggleManufacturer(manufacturer)}
+                  />
+                  <span className="catalog-filter__checkbox" aria-hidden="true" />
+                  <span>{manufacturer}</span>
+                </label>
+              ))
+            ) : (
+              <p className="catalog-filter__empty">
+                Nema proizvođača za ovu pretragu.
+              </p>
+            )}
+          </div>
+
+          <div className="catalog-filter__footer">
+            <span>{availableManufacturers.length} dostupnih</span>
+            <button
+              type="button"
+              onClick={clearFilters}
+              disabled={selectedManufacturers.length === 0 && !searchTerm}
+            >
+              Poništi filtere
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
   );
 };
 

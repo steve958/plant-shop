@@ -1,11 +1,16 @@
-import { useEffect, useState } from "react";
-import { db } from "../firebase";
-import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
-import { useDispatch } from "react-redux";
-import { addToCart } from "../Redux/cartSlice";
-import { toast } from "react-toastify";
-import "./ItemDetails.css";
+import { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { doc, getDoc } from 'firebase/firestore';
+import { useDispatch } from 'react-redux';
+import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
+import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
+import SupportAgentOutlinedIcon from '@mui/icons-material/SupportAgentOutlined';
+import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined';
+import { toast } from 'react-toastify';
+import { db } from '../firebase';
+import { addToCart } from '../Redux/cartSlice';
+import productPlaceholder from '../../assets/product-placeholder.svg';
+import './ItemDetails.css';
 
 type Product = {
   productId: string;
@@ -16,6 +21,8 @@ type Product = {
   category?: string;
   subcategory?: string;
   manufacturer?: string;
+  onDiscount?: boolean;
+  discountPrice?: number | null;
 };
 
 export default function ItemDetails() {
@@ -23,143 +30,114 @@ export default function ItemDetails() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [quantity, setQuantity] = useState<number>(1);
-
+  const [quantity, setQuantity] = useState(1);
   const dispatch = useDispatch();
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProductDetails = async () => {
       setLoading(true);
       try {
-        if (!productId) throw new Error("Product ID is undefined");
-        const docRef = doc(db, "products", productId);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setProduct({
-            productId: docSnap.id,
-            name: data.name,
-            price: data.price,
-            images: data.images || [],
-            description: data.description || "",
-            category: data.category || "",
-            subcategory: data.subcategory || "",
-            manufacturer: data.manufacturer || "",
-          });
-          setSelectedImage(data.images?.[0] || null);
-        } else {
-          console.error("No such document!");
-        }
+        if (!productId) throw new Error('Product ID is undefined');
+        const productSnapshot = await getDoc(doc(db, 'products', productId));
+        if (!productSnapshot.exists()) return;
+        const data = productSnapshot.data();
+        const productImages = Array.isArray(data.images) ? data.images.filter(Boolean) : [];
+        setProduct({
+          productId: productSnapshot.id,
+          name: data.name || 'Proizvod',
+          price: Number(data.price) || 0,
+          images: productImages,
+          description: data.description || '',
+          category: data.category || '',
+          subcategory: data.subcategory || '',
+          manufacturer: data.manufacturer || '',
+          onDiscount: Boolean(data.onDiscount),
+          discountPrice: typeof data.discountPrice === 'number' ? data.discountPrice : null,
+        });
+        setSelectedImage(productImages[0] || null);
       } catch (error) {
-        console.error("Error fetching product details: ", error);
+        console.error('Error fetching product details:', error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchProductDetails();
   }, [productId]);
 
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat("sr-RS", {
-      style: "currency",
-      currency: "RSD",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(price);
-
-  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseInt(e.target.value, 10);
-    setQuantity(val > 0 ? val : 1);
-  };
+  const formatPrice = (price: number) => new Intl.NumberFormat('sr-RS', {
+    style: 'currency', currency: 'RSD', minimumFractionDigits: 2, maximumFractionDigits: 2,
+  }).format(price);
 
   const handleAddToCart = () => {
     if (!product) return;
-    dispatch(
-      addToCart({
-        productId: product.productId,
-        name: product.name,
-        price: product.price,
-        image: selectedImage || "",
-        quantity,
-      })
-    );
-    toast.success("Proizvod je uspešno dodat u korpu!");
-    setTimeout(() => {
-      navigate("/početna");
-    }, 1500);
+    const sellingPrice = product.onDiscount && product.discountPrice ? product.discountPrice : product.price;
+    dispatch(addToCart({
+      productId: product.productId,
+      name: product.name,
+      price: sellingPrice,
+      image: product.images[0] || selectedImage || '',
+      quantity,
+    }));
+    toast.success('Proizvod je uspešno dodat u korpu!');
   };
 
   return (
-    <div className="item-details-container">
-      {loading ? (
-        <div className="loader">Učitavanje...</div>
-      ) : product ? (
-        <div className="item-details-wrapper">
-          {/* Left: Product Images */}
-          <div className="product-images">
-            <div className="main-image-container">
-              <img
-                src={selectedImage || "placeholder.jpg"}
-                alt={product.name}
-                className="main-image"
-              />
-            </div>
-            <div className="thumbnail-strip">
-              {product.images.map((img, i) => (
-                <img
-                  key={i}
-                  src={img}
-                  alt={`Thumbnail ${i + 1}`}
-                  className={`thumbnail ${selectedImage === img ? "active" : ""
-                    }`}
-                  onClick={() => setSelectedImage(img)}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Right: Product Details */}
-          <div className="product-details">
-            <h1 className="product-title">{product.name}</h1>
-            <p className="product-price">{formatPrice(product.price)}</p>
-            <p className="old-price">14.499,00 RSD</p>
-            <p className="discount-text">Ušteda: 5.000,00 RSD</p>
-            {product.description && <p className="product-desc">{product.description}</p>}
-
-            <div className="quantity-actions">
-              <label>Količina:</label>
-              <div className="quantity-input-wrapper">
-                <button
-                  className="qty-btn"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                >
-                  –
-                </button>
-                <input
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={handleQuantityChange}
-                  title="Količina proizvoda"
-                  placeholder="Unesite količinu"
-                />
-                <button className="qty-btn" onClick={() => setQuantity(quantity + 1)}>
-                  +
-                </button>
+    <main className="item-details-container">
+      {loading ? <div className="loader">Učitavanje...</div> : product ? (
+        <div className="item-details-page">
+          <nav className="product-breadcrumb" aria-label="Putanja">
+            <Link to="/početna">Početna</Link><span>/</span>
+            {product.category && <><span>{product.category}</span><span>/</span></>}
+            <strong>{product.name}</strong>
+          </nav>
+          <div className="item-details-wrapper">
+            <section className="product-images" aria-label="Fotografije proizvoda">
+              <div className="main-image-container">
+                <img src={selectedImage || productPlaceholder} alt={product.name} className="main-image" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} />
               </div>
-            </div>
+              {product.images.length > 1 && <div className="thumbnail-strip">
+                {product.images.map((image, index) => (
+                  <button type="button" key={image || index} className={`thumbnail-button ${selectedImage === image ? 'active' : ''}`} onClick={() => setSelectedImage(image)} aria-label={`Prikaži fotografiju ${index + 1}`}>
+                    <img src={image} alt={`${product.name}, fotografija ${index + 1}`} className="thumbnail" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} />
+                  </button>
+                ))}
+              </div>}
+            </section>
 
-            <button className="add-to-cart-button" onClick={handleAddToCart}>
-              Dodaj u korpu
-            </button>
+            <section className="product-details">
+              <div className="product-meta-row">
+                {product.manufacturer && <span>{product.manufacturer}</span>}
+                {product.onDiscount && product.discountPrice ? <strong>Akcijska cena</strong> : <span>Dostupno za poručivanje</span>}
+              </div>
+              <h1 className="product-title">{product.name}</h1>
+              <div className="product-price-block">
+                <p className="product-price">{formatPrice(product.onDiscount && product.discountPrice ? product.discountPrice : product.price)}</p>
+                {product.onDiscount && product.discountPrice ? <><del>{formatPrice(product.price)}</del><span>Ušteda {formatPrice(product.price - product.discountPrice)}</span></> : null}
+              </div>
+              <dl className="product-facts">
+                {product.category && <div><dt>Kategorija</dt><dd>{product.category}</dd></div>}
+                {product.subcategory && <div><dt>Namena</dt><dd>{product.subcategory}</dd></div>}
+                {product.manufacturer && <div><dt>Proizvođač</dt><dd>{product.manufacturer}</dd></div>}
+              </dl>
+              {product.description ? <div className="product-description"><h2>Opis proizvoda</h2><p>{product.description}</p></div> : <div className="product-description product-description--empty"><h2>Informacije o proizvodu</h2><p>Za dodatne informacije o primeni i dostupnosti kontaktirajte naš stručni tim.</p></div>}
+              <div className="quantity-actions">
+                <label htmlFor="product-quantity">Količina</label>
+                <div className="quantity-input-wrapper">
+                  <button type="button" className="qty-btn" onClick={() => setQuantity(Math.max(1, quantity - 1))} aria-label="Smanji količinu">−</button>
+                  <input id="product-quantity" type="number" min="1" value={quantity} onChange={(event) => setQuantity(Math.max(1, Number.parseInt(event.target.value, 10) || 1))} />
+                  <button type="button" className="qty-btn" onClick={() => setQuantity(quantity + 1)} aria-label="Povećaj količinu">+</button>
+                </div>
+              </div>
+              <button className="add-to-cart-button" onClick={handleAddToCart}><ShoppingBagOutlinedIcon /> Dodaj u korpu</button>
+              <div className="product-service-notes">
+                <span><VerifiedOutlinedIcon />Proverena ponuda</span>
+                <span><SupportAgentOutlinedIcon />Stručna podrška</span>
+                <span><LocalShippingOutlinedIcon />Dostava širom Srbije</span>
+              </div>
+            </section>
           </div>
         </div>
-      ) : (
-        <p>Proizvod nije pronađen.</p>
-      )}
-    </div>
+      ) : <div className="product-not-found"><h1>Proizvod nije pronađen</h1><Link to="/početna">Nazad na ponudu</Link></div>}
+    </main>
   );
 }

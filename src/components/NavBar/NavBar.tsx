@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* NavBar.tsx */
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -107,8 +106,12 @@ export default function NavBar() {
 
   // Close open dropdowns when clicking outside the navigation
   useEffect(() => {
-    const handleClickOutside = (event: any) => {
-      if (navRef.current && !navRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        navRef.current &&
+        event.target instanceof Node &&
+        !navRef.current.contains(event.target)
+      ) {
         setActiveDropdown(null);
         setMobileMenuOpen(false);
         setActiveMobileDropdown(null);
@@ -130,13 +133,13 @@ export default function NavBar() {
   };
 
   return (
-    <nav ref={navRef}>
+    <nav ref={navRef} className="shop-navigation" aria-label="Kategorije proizvoda">
       {/* Desktop Menu */}
       <div className="desktop-menu">
         <div className="nav-bar-container">
-          {navItems.map((item, index) => (
+          {navItems.map((item) => (
             <div
-              key={index}
+              key={item.label}
               className="nav-item"
               onMouseEnter={() => {
                 if (item.subItems.length > 0) setActiveDropdown(item.label);
@@ -149,9 +152,9 @@ export default function NavBar() {
               <h3>{item.label}</h3>
               {item.subItems.length > 0 && (
                 <div className={`dropdown-menu ${activeDropdown === item.label ? "open" : ""}`}>
-                  {item.subItems.map((subItem, subIndex) => (
+                  {item.subItems.map((subItem) => (
                     <div
-                      key={subIndex}
+                      key={subItem.label}
                       className="dropdown-item"
                       onClick={() => handleNavigate(subItem.route)}
                     >
@@ -172,18 +175,27 @@ export default function NavBar() {
 
       {/* Mobile Menu */}
       <div className="mobile-menu">
-        <div
+        <button
+          type="button"
           className={`hamburger-icon ${isMobileMenuOpen ? 'open' : ''}`}
           onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
-          aria-label="Toggle menu"
+          aria-label={isMobileMenuOpen ? "Zatvori kategorije" : "Otvori kategorije"}
+          aria-expanded={isMobileMenuOpen}
         >
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
+          <span className="hamburger-lines" aria-hidden="true">
+            <i></i>
+            <i></i>
+            <i></i>
+          </span>
+          <strong>Kategorije proizvoda</strong>
+        </button>
         <div className={`mobile-nav-items ${isMobileMenuOpen ? 'open' : ''}`}>
-          {navItems.map((item, index) => (
-            <div key={index} className="mobile-nav-item">
+          <div className="mobile-nav-title">
+            <span>Prodavnica</span>
+            <strong>Kategorije</strong>
+          </div>
+          {navItems.map((item) => (
+            <div key={item.label} className="mobile-nav-item">
               <div className="mobile-nav-item-header">
                 <h3
                   onClick={() => {
@@ -207,9 +219,9 @@ export default function NavBar() {
               </div>
               {item.subItems.length > 0 && (
                 <div className={`mobile-dropdown ${activeMobileDropdown === item.label ? 'open' : ''}`}>
-                  {item.subItems.map((subItem, subIndex) => (
+                  {item.subItems.map((subItem) => (
                     <div
-                      key={subIndex}
+                      key={subItem.label}
                       className="mobile-dropdown-item"
                       onClick={() => handleNavigate(subItem.route)}
                     >
@@ -226,6 +238,14 @@ export default function NavBar() {
             </div>
           ))}
         </div>
+        {isMobileMenuOpen && (
+          <button
+            className="mobile-nav-overlay"
+            type="button"
+            aria-label="Zatvori meni"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
       </div>
     </nav>
   );

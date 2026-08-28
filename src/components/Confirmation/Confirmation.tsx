@@ -1,24 +1,28 @@
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import "./Confirmation.css"
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 
 const Confirmation = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const orderNumber = (location.state as { orderNumber?: string } | null)?.orderNumber;
 
   const handleGoHome = () => {
     navigate('/početna'); 
   };
 
   return (
-    <div className="confirmation-container">
+    <main className="confirmation-container">
       <div className="confirmation-wrapper">
-      <CheckCircleOutlinedIcon className="checked" sx={{fontSize: 350}} />
-      <h2>Vaša porudžbina je poslata!</h2>
-      <p>Hvala na kupovini!</p>
-      
+        <div className="confirmation-icon"><CheckCircleOutlinedIcon className="checked" /></div>
+        <span>Porudžbina je primljena</span>
+        <h1>Hvala na poverenju.</h1>
+        <p>Naš tim će proveriti dostupnost proizvoda i kontaktirati vas radi potvrde dostave.</p>
+        {orderNumber && <div className="confirmation-number"><span>Broj porudžbine</span><strong>{orderNumber}</strong></div>}
+        <div className="confirmation-note"><strong>Šta sledi?</strong><span>Potvrda porudžbine i dogovor oko isporuke stižu putem telefona ili emaila.</span></div>
+        <button className="confirmation-home-button" onClick={handleGoHome}>Nazad na početnu</button>
       </div>
-      <button className="confirmation-home-button" onClick={handleGoHome}>Početna </button>
-    </div>
+    </main>
   );
 };
 

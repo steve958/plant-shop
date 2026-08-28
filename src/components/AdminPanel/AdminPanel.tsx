@@ -1,425 +1,176 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { db, storage } from '../firebase';
-import {
-  collection,
-  getDocs,
-  doc,
-  deleteDoc,
-  updateDoc,
-} from 'firebase/firestore';
-import { ref, deleteObject } from 'firebase/storage';
-import './AdminPanel.css';
-import AddCircleIcon from '@mui/icons-material/AddCircle';
-import AddItemModal from '../Modals/NewItemModal';
-import DeleteIcon from '@mui/icons-material/Delete';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { signOut } from 'firebase/auth';
+import { collection, deleteDoc, doc, getDocs, updateDoc } from 'firebase/firestore';
+import { deleteObject, ref } from 'firebase/storage';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
+import { Button, Dialog, DialogActions, DialogContent } from '@mui/material';
 import { ScaleLoader } from 'react-spinners';
-import EditItemModal from '../Modals/EditItemModal';
-import Filter from '../Filter/Filter';          // <-- Refactored Filter
-import Sort from '../Sort/Sort';
-import { useSelector } from 'react-redux';
+import { auth, db, storage } from '../firebase';
 import { RootState } from '../Redux/store';
-import CheckIcon from '@mui/icons-material/Check';
-import { Button, Dialog, DialogContent, DialogActions } from '@mui/material';
+import { logout } from '../Redux/authSlice';
+import AddItemModal from '../Modals/NewItemModal';
+import EditItemModal from '../Modals/EditItemModal';
+import Filter from '../Filter/Filter';
+import Sort from '../Sort/Sort';
+import productPlaceholder from '../../assets/product-placeholder.svg';
+import AdminOrders from '../AdminOrders/AdminOrders';
+import AdminNews from '../AdminNews/AdminNews';
+import './AdminPanel.css';
 
 type Product = {
-  productId: string;
-  name: string;
-  category: string;
-  subcategory: string;
-  manufacturer: string;
-  gender: 'male' | 'female';
-  size: string[];
-  price: number;
-  images: string[];
-  description: string;
-  onDiscount?: boolean;
-  discountPrice?: number;
+  productId: string; name: string; category: string; subcategory: string; manufacturer: string;
+  gender: 'male' | 'female'; size: string[]; price: number; images: string[]; description: string;
+  onDiscount?: boolean; discountPrice?: number;
 };
 
-type DeleteTarget = {
-  productId: string;
-  images: string[];
-} | null;
+type DeleteTarget = { productId: string; images: string[] } | null;
 
 export default function AdminPanel() {
-  // -----------------------------
-  // State
-  // -----------------------------
+  const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const previewMode = import.meta.env.DEV && new URLSearchParams(location.search).get('preview') === 'admin';
+  const searchQuery = useSelector((state: RootState) => state.search.query);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshProducts, setRefreshProducts] = useState(false);
-
   const [newItemClicked, setNewItemClicked] = useState(false);
-  const [editItemClicked, setEditItemClicked] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-
-  // Confirmation modal for deletion
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
-
-  // For selecting which image index is "main" or "selected"
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number[]>([]);
-
-  // Filter & Sort states
   const [manufacturerFilter, setManufacturerFilter] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState('nameAsc');
+  const [activeView, setActiveView] = useState<'orders' | 'products' | 'news'>('orders');
 
-  // Search query from Redux
-  const searchQuery = useSelector((state: RootState) => state.search.query);
-
-  // -----------------------------
-  // 1) Fetch Products (on mount + refresh)
-  // -----------------------------
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const productsCollection = collection(db, 'products');
-      const productSnapshot = await getDocs(productsCollection);
-      const productList = productSnapshot.docs.map((doc) => {
-        const data = doc.data() as Omit<Product, 'productId'>;
-        return { productId: doc.id, ...data };
-      });
-      setProducts(productList);
-      setSelectedImageIndex(Array(productList.length).fill(0));
+      const snapshot = await getDocs(collection(db, 'products'));
+      setProducts(snapshot.docs.map((productDoc) => ({
+        productId: productDoc.id,
+        ...(productDoc.data() as Omit<Product, 'productId'>),
+      })));
     } catch (error) {
-      console.error('Error fetching products: ', error);
+      console.error('Error fetching products:', error);
     } finally {
       setLoading(false);
-      setRefreshProducts(false); // Prevent infinite loop
     }
   }, []);
 
-  useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+  useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
-  // Re-fetch if refreshProducts is toggled
-  useEffect(() => {
-    if (refreshProducts) {
-      fetchProducts();
-    }
-  }, [refreshProducts, fetchProducts]);
-
-  // -----------------------------
-  // 2) Adding a Product
-  // -----------------------------
-  const handleNewItemClicked = useCallback(() => {
-    setNewItemClicked(true);
-    // We'll do the actual fetch AFTER product is saved
-    setRefreshProducts(false);
-  }, []);
-
-  // Optionally insert new product in local state immediately:
-  const handleAddProductLocally = useCallback((newProduct: Product) => {
-    // Insert at the front so user sees it instantly
-    setProducts((prev) => [newProduct, ...prev]);
-  }, []);
-
-  // Called when AddItemModal closes
-  const handleCloseAddItemModal = useCallback(() => {
-    setNewItemClicked(false);
-    // Now we trigger a fresh re-fetch from Firestore to confirm
-    setRefreshProducts(true);
-  }, []);
-
-  // -----------------------------
-  // 3) Editing a Product
-  // -----------------------------
-  const handleEditItemClick = useCallback((product: Product) => {
-    setSelectedProduct(product);
-    setEditItemClicked(true);
-    setRefreshProducts(false);
-  }, []);
-
-  const handleCloseEditItemModal = useCallback(() => {
-    setEditItemClicked(false);
-    setSelectedProduct(null);
-    setRefreshProducts(true);
-  }, []);
-
-  // -----------------------------
-  // 4) Image Selection / Reordering
-  // -----------------------------
-  const handleImageSelect = useCallback(
-    async (productIndex: number, imageIndex: number) => {
-      const product = products[productIndex];
-      if (!product) return;
-
-      // Move selected image to the front locally
-      setSelectedImageIndex((prev) => {
-        const updated = [...prev];
-        updated[productIndex] = imageIndex;
-        return updated;
-      });
-
-      const imagesCopy = [...product.images];
-      const chosen = imagesCopy.splice(imageIndex, 1)[0];
-      imagesCopy.unshift(chosen);
-
-      // Update in Firestore
-      try {
-        const docRef = doc(db, 'products', product.productId);
-        await updateDoc(docRef, { images: imagesCopy });
-      } catch (err) {
-        console.error('Error updating images:', err);
-      }
-    },
-    [products]
-  );
-
-  // -----------------------------
-  // 5) Deleting a Product
-  // -----------------------------
-  const openDeleteModal = useCallback(
-    (
-      event: React.MouseEvent<SVGSVGElement>,
-      productId: string,
-      images: string[]
-    ) => {
-      event.stopPropagation();
-      setDeleteTarget({ productId, images });
-      setDeleteModalOpen(true);
-      setRefreshProducts(false);
-    },
-    []
-  );
-
-  const closeDeleteModal = useCallback(() => {
-    setDeleteModalOpen(false);
-    setDeleteTarget(null);
-  }, []);
-
-  const handleDeleteConfirmed = useCallback(async () => {
-    if (!deleteTarget) return;
-    const { productId, images } = deleteTarget;
-    try {
-      // Delete doc from Firestore
-      const productDocRef = doc(db, 'products', productId);
-      await deleteDoc(productDocRef);
-
-      // Remove from local state
-      setProducts((prev) => prev.filter((p) => p.productId !== productId));
-
-      // Delete from storage
-      const deletePromises = images.map((img) => {
-        const imageRef = ref(storage, img);
-        return deleteObject(imageRef);
-      });
-      await Promise.all(deletePromises);
-    } catch (err) {
-      console.error('Error deleting product:', err);
-    } finally {
-      closeDeleteModal();
-      setRefreshProducts(true);
-    }
-  }, [deleteTarget, closeDeleteModal]);
-
-  // -----------------------------
-  // 6) Format Price Utility
-  // -----------------------------
-  const formatPrice = useCallback((price: number) => {
-    return new Intl.NumberFormat('sr-RS', {
-      style: 'currency',
-      currency: 'RSD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(price);
-  }, []);
-
-  // -----------------------------
-  // 7) Derive Manufacturer List + Filter/Sort
-  // -----------------------------
-  // A) Compute all unique manufacturers from products
-  const availableManufacturers = useMemo(() => {
-    const setOfManufacturers = new Set<string>();
-    products.forEach((p) => {
-      if (p.manufacturer) {
-        setOfManufacturers.add(p.manufacturer);
-      }
+  const availableManufacturers = useMemo(() => Array.from(new Set(products.map((product) => product.manufacturer).filter(Boolean))).sort(), [products]);
+  const displayedProducts = useMemo(() => {
+    let data = products.filter((product) => !searchQuery.trim() || product.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    if (manufacturerFilter.length) data = data.filter((product) => manufacturerFilter.includes(product.manufacturer));
+    return [...data].sort((a, b) => {
+      if (sortBy === 'priceAsc') return a.price - b.price;
+      if (sortBy === 'priceDesc') return b.price - a.price;
+      if (sortBy === 'nameDesc') return b.name.localeCompare(a.name);
+      return a.name.localeCompare(b.name);
     });
-    return Array.from(setOfManufacturers);
-  }, [products]);
+  }, [products, searchQuery, manufacturerFilter, sortBy]);
 
-  // B) Filter
-  const filteredData = useMemo(() => {
-    let data = products;
+  const formatPrice = (price: number) => new Intl.NumberFormat('sr-RS', {
+    style: 'currency', currency: 'RSD', minimumFractionDigits: 2, maximumFractionDigits: 2,
+  }).format(price);
 
-    // Search by name
-    if (searchQuery.trim() !== '') {
-      data = data.filter((p) =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+  const handleImageSelect = async (product: Product, imageIndex: number) => {
+    if (previewMode || imageIndex === 0 || !product.images?.[imageIndex]) return;
+    const images = [...product.images];
+    const selectedImage = images.splice(imageIndex, 1)[0];
+    images.unshift(selectedImage);
+    try {
+      await updateDoc(doc(db, 'products', product.productId), { images });
+      setProducts((current) => current.map((item) => item.productId === product.productId ? { ...item, images } : item));
+    } catch (error) {
+      console.error('Error updating product images:', error);
     }
+  };
 
-    // Manufacturer filter
-    if (manufacturerFilter.length > 0) {
-      data = data.filter((p) => manufacturerFilter.includes(p.manufacturer));
+  const handleDeleteConfirmed = async () => {
+    if (!deleteTarget || previewMode) return;
+    try {
+      await deleteDoc(doc(db, 'products', deleteTarget.productId));
+      await Promise.all(deleteTarget.images.map((image) => deleteObject(ref(storage, image))));
+      setProducts((current) => current.filter((product) => product.productId !== deleteTarget.productId));
+    } catch (error) {
+      console.error('Error deleting product:', error);
+    } finally {
+      setDeleteTarget(null);
     }
+  };
 
-    return data;
-  }, [products, searchQuery, manufacturerFilter]);
+  const stats = {
+    total: products.length,
+    discounts: products.filter((product) => product.onDiscount).length,
+    brands: availableManufacturers.length,
+    missingImages: products.filter((product) => !product.images?.length).length,
+  };
 
-  // C) Sort
-  const sortedData = useMemo(() => {
-    const sorted = [...filteredData];
-    switch (sortBy) {
-      case 'priceAsc':
-        sorted.sort((a, b) => a.price - b.price);
-        break;
-      case 'priceDesc':
-        sorted.sort((a, b) => b.price - a.price);
-        break;
-      case 'nameDesc':
-        sorted.sort((a, b) => b.name.localeCompare(a.name));
-        break;
-      default: // nameAsc
-        sorted.sort((a, b) => a.name.localeCompare(b.name));
-        break;
+  const handleAdminLogout = async () => {
+    if (!previewMode) {
+      await signOut(auth);
+      dispatch(logout());
     }
-    return sorted;
-  }, [filteredData, sortBy]);
+    navigate(previewMode ? '/početna' : '/admin/prijava');
+  };
 
-  // -----------------------------
-  // 8) Handlers for Sort & Filter
-  // -----------------------------
-  const handleSortChange = useCallback((sortOption: string) => {
-    setSortBy(sortOption);
-  }, []);
-
-  const handleFilterChange = useCallback(
-    (filters: { manufacturers: string[] }) => {
-      // The Filter component gives us the new manufacturer selection
-      setManufacturerFilter(filters.manufacturers);
-    },
-    []
-  );
-
-  // -----------------------------
-  // Render
-  // -----------------------------
   return (
-    <div className="admin-panel-container">
-      {/* Add / Edit Modals */}
-      {newItemClicked && (
-        <AddItemModal
-          onClose={handleCloseAddItemModal}
-          onProductAdded={handleAddProductLocally}
-        />
-      )}
-      {editItemClicked && selectedProduct && (
-        <EditItemModal product={selectedProduct} onClose={handleCloseEditItemModal} />
-      )}
-
-      {/* Confirmation Dialog for Delete */}
-      <Dialog open={deleteModalOpen} onClose={closeDeleteModal}>
-        <DialogContent>
-          Da li ste sigurni da želite da obrišete ovaj proizvod?
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDeleteModal} color="inherit">
-            Odustani
-          </Button>
-          <Button onClick={handleDeleteConfirmed} color="error">
-            Obriši
-          </Button>
-        </DialogActions>
+    <main className="admin-panel-container">
+      {!previewMode && newItemClicked && <AddItemModal onClose={() => { setNewItemClicked(false); fetchProducts(); }} onProductAdded={(product) => setProducts((current) => [product, ...current])} />}
+      {!previewMode && selectedProduct && <EditItemModal product={selectedProduct} onClose={() => { setSelectedProduct(null); fetchProducts(); }} />}
+      <Dialog open={Boolean(deleteTarget)} onClose={() => setDeleteTarget(null)}>
+        <DialogContent>Da li ste sigurni da želite da obrišete ovaj proizvod?</DialogContent>
+        <DialogActions><Button onClick={() => setDeleteTarget(null)} color="inherit">Odustani</Button><Button onClick={handleDeleteConfirmed} color="error">Obriši</Button></DialogActions>
       </Dialog>
 
-      {/* Sidebar (Sort + Filter) */}
-      <div className="admin-sidebar">
-        <div className="admin-sort-filter-wrapper">
-          <Sort onSortChange={handleSortChange} />
-          <Filter
-            onFilterChange={handleFilterChange}
-            availableManufacturers={availableManufacturers}
-          />
-        </div>
-      </div>
+      {previewMode && <div className="admin-preview-banner"><LockOutlinedIcon /><div><strong>Administratorski pregled — samo za čitanje</strong><span>Promene statusa porudžbine i izmene kataloga isključene su u lokalnom pregledu.</span></div></div>}
 
-      {/* Main Content */}
-      <div className="admin-main-content">
-        <div className="add-product-button" onClick={handleNewItemClicked}>
-          <AddCircleIcon sx={{ fontSize: 40 }} />
-          <span>Dodaj Proizvod</span>
-        </div>
+      <div className="admin-topbar"><nav className="admin-section-tabs" aria-label="Sekcije administracije">
+        <button className={activeView === 'orders' ? 'active' : ''} onClick={() => setActiveView('orders')}>Porudžbine</button>
+        <button className={activeView === 'products' ? 'active' : ''} onClick={() => setActiveView('products')}>Proizvodi</button>
+        <button className={activeView === 'news' ? 'active' : ''} onClick={() => setActiveView('news')}>Vesti</button>
+      </nav><button className="admin-logout-button" onClick={handleAdminLogout}><LogoutOutlinedIcon />{previewMode ? 'Izađi iz pregleda' : 'Odjavi se'}</button></div>
 
-        {loading ? (
-          <div className="loader">
-            <ScaleLoader color="#54C143" />
-          </div>
-        ) : sortedData.length === 0 ? (
-          <p>Nema proizvoda za prikaz.</p>
-        ) : (
-          <div className="table-container">
-            <table className="product-table">
-              <thead>
-                <tr>
-                  <th>Naziv</th>
-                  <th>Kategorija</th>
-                  <th>Podkategorija</th>
-                  <th>Cena</th>
-                  <th>Na popustu</th>
-                  <th>Slike</th>
-                  <th>Akcija</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedData.map((product, index) => (
-                  <tr
-                    key={product.productId}
-                    className="product-row"
-                    onClick={() => handleEditItemClick(product)}
-                  >
-                    <td>{product.name}</td>
-                    <td>{product.category}</td>
-                    <td>{product.subcategory}</td>
-                    <td>{formatPrice(product.price)}</td>
-                    <td>
-                      {product.onDiscount && <CheckIcon style={{ color: 'green' }} />}
-                    </td>
-                    <td
-                      onClick={(e) => {
-                        // Prevent row click from opening Edit modal
-                        e.stopPropagation();
-                      }}
-                    >
-                      <div className="images-wrapper">
-                        <div className="thumbnails-row">
-                          {product.images.map((img, imgIndex) => (
-                            <img
-                              key={imgIndex}
-                              src={img}
-                              alt={`image-${imgIndex}`}
-                              className={`thumbnail ${imgIndex === 0 ? 'main-image' : ''
-                                } ${selectedImageIndex[index] === imgIndex
-                                  ? 'selected'
-                                  : ''
-                                }`}
-                              onClick={() => handleImageSelect(index, imgIndex)}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </td>
-                    <td
-                      onClick={(e) => {
-                        e.stopPropagation();
-                      }}
-                    >
-                      <DeleteIcon
-                        className="delete-icon"
-                        onClick={(event) =>
-                          openDeleteModal(event, product.productId, product.images)
-                        }
-                      />
-                    </td>
+      <header className="admin-heading">
+        <div><span className="admin-eyebrow">Administracija</span><h1>{activeView === 'orders' ? 'Porudžbine' : activeView === 'products' ? 'Katalog proizvoda' : 'Aktuelnosti'}</h1><p>{activeView === 'orders' ? 'Pregledajte nove zahteve, kontaktirajte kupce i zatvorite završene porudžbine.' : activeView === 'products' ? 'Upravljajte asortimanom, cenama, slikama i akcijskim ponudama.' : 'Pišite i objavljujte vesti koje se prikazuju na Plant Centar sajtu.'}</p></div>
+        {activeView === 'products' && <button className="admin-add-button" onClick={() => !previewMode && setNewItemClicked(true)} disabled={previewMode}><AddCircleOutlineIcon /> Dodaj proizvod</button>}
+      </header>
+
+      {activeView === 'orders' ? <AdminOrders previewMode={previewMode} /> : activeView === 'news' ? <AdminNews previewMode={previewMode} /> : <><section className="admin-stats" aria-label="Pregled kataloga">
+        <article><span>Ukupno proizvoda</span><strong>{stats.total}</strong></article>
+        <article><span>Na popustu</span><strong>{stats.discounts}</strong></article>
+        <article><span>Proizvođači</span><strong>{stats.brands}</strong></article>
+        <article className={stats.missingImages ? 'admin-stat-warning' : ''}><span>Bez fotografije</span><strong>{stats.missingImages}</strong></article>
+      </section>
+
+      <div className="admin-workspace">
+        <aside className="admin-sidebar"><div className="admin-sidebar-heading"><strong>Prikaz kataloga</strong><span>{displayedProducts.length} rezultata</span></div><div className="admin-sort-filter-wrapper"><Sort onSortChange={setSortBy} /><Filter onFilterChange={(filters) => setManufacturerFilter(filters.manufacturers)} availableManufacturers={availableManufacturers} /></div></aside>
+
+        <section className="admin-main-content">
+          {loading ? <div className="admin-loader"><ScaleLoader color="#287b35" /></div> : !displayedProducts.length ? <div className="admin-empty"><h2>Nema proizvoda za prikaz</h2><p>Promenite filter ili termin pretrage.</p></div> : (
+            <div className="table-container">
+              <table className="product-table">
+                <thead><tr><th>Proizvod</th><th>Kategorija</th><th>Cena</th><th>Status</th><th>Fotografije</th><th><span className="sr-only">Akcije</span></th></tr></thead>
+                <tbody>{displayedProducts.map((product) => (
+                  <tr key={product.productId} className={previewMode ? '' : 'product-row'} onClick={() => !previewMode && setSelectedProduct(product)}>
+                    <td><div className="admin-product-cell"><img src={product.images?.[0] || productPlaceholder} alt="" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} /><div><strong>{product.name}</strong><span>{product.manufacturer || 'Bez proizvođača'}</span></div></div></td>
+                    <td><strong className="admin-category">{product.category || '—'}</strong><span className="admin-subcategory">{product.subcategory || 'Bez podkategorije'}</span></td>
+                    <td><strong className="admin-price">{formatPrice(product.onDiscount && product.discountPrice ? product.discountPrice : product.price)}</strong>{product.onDiscount && product.discountPrice ? <del>{formatPrice(product.price)}</del> : null}</td>
+                    <td>{product.onDiscount ? <span className="admin-badge admin-badge-sale">Akcija</span> : <span className="admin-badge">Redovna cena</span>}</td>
+                    <td onClick={(event) => event.stopPropagation()}><div className="admin-thumbnails">{(product.images || []).slice(0, 4).map((image, index) => <button key={`${image}-${index}`} title={previewMode ? 'Pregled je samo za čitanje' : 'Postavi kao glavnu fotografiju'} disabled={previewMode} onClick={() => handleImageSelect(product, index)}><img src={image} alt={`${product.name} ${index + 1}`} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} /></button>)}{!product.images?.length && <span className="admin-no-image">Nema slika</span>}</div></td>
+                    <td onClick={(event) => event.stopPropagation()}><button className="admin-delete-button" title={previewMode ? 'Pregled je samo za čitanje' : 'Obriši proizvod'} disabled={previewMode} onClick={() => setDeleteTarget({ productId: product.productId, images: product.images || [] })}><DeleteOutlineIcon /></button></td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
+                ))}</tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      </div></>}
+    </main>
   );
 }

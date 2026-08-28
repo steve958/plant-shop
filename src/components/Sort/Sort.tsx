@@ -1,39 +1,37 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from "react";
-import { Box, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from "@mui/material";
-
+import { useState } from "react";
+import SortOutlinedIcon from "@mui/icons-material/SortOutlined";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import "./Sort.css";
 
 interface SortProps {
   onSortChange: (sortBy: string) => void;
 }
 
-const Sort: React.FC<SortProps> = ({ onSortChange }) => {
+const Sort = ({ onSortChange }: SortProps) => {
   const [sortValue, setSortValue] = useState("nameAsc");
 
-  const handleSortChange = (event: SelectChangeEvent) => {
-    const value = event.target.value;
-    setSortValue(value);
-    onSortChange(value);
+  const handleSortChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSortValue(event.target.value);
+    onSortChange(event.target.value);
   };
 
   return (
-    <Box sx={{ width: "100%", maxWidth: 200, mx: "auto", textAlign: "center" }}>
-      <FormControl fullWidth>
-        <InputLabel id="sort-select-label">Sortiraj</InputLabel>
-        <Select
-          labelId="sort-select-label"
-          id="sort-select"
-          value={sortValue}
-          label="Sortiraj"
-          onChange={handleSortChange}
-        >
-          <MenuItem value="nameAsc">Naziv: A-Z</MenuItem>
-          <MenuItem value="nameDesc">Naziv: Z-A</MenuItem>
-          <MenuItem value="priceAsc">Cena: manja-veća</MenuItem>
-          <MenuItem value="priceDesc">Cena: veća-manja</MenuItem>
-        </Select>
-      </FormControl>
-    </Box>
+    <label className="catalog-sort">
+      <span className="catalog-sort__icon">
+        <SortOutlinedIcon aria-hidden="true" />
+      </span>
+      <span className="catalog-sort__copy">
+        <small>Prikaz proizvoda</small>
+        <strong>Sortiranje</strong>
+      </span>
+      <select value={sortValue} onChange={handleSortChange}>
+        <option value="nameAsc">Naziv: A–Z</option>
+        <option value="nameDesc">Naziv: Z–A</option>
+        <option value="priceAsc">Cena: od niže</option>
+        <option value="priceDesc">Cena: od više</option>
+      </select>
+      <ExpandMoreIcon className="catalog-sort__chevron" aria-hidden="true" />
+    </label>
   );
 };
 
