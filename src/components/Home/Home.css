@@ -99,13 +99,28 @@
   min-height: 430px;
   overflow: hidden;
   border-radius: 30px;
+  background:
+    radial-gradient(circle at 30% 28%, rgba(84, 193, 67, 0.2), transparent 36%),
+    linear-gradient(145deg, #eaf2e6, #f8faf5 55%, #dfeadd);
   box-shadow: 0 30px 70px rgba(31, 63, 42, 0.16);
+}
+
+.shop-hero__visual::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(105deg, transparent 25%, rgba(255, 255, 255, 0.58) 43%, transparent 61%);
+  background-size: 220% 100%;
+  animation: shop-hero-loading 1.45s ease-in-out infinite;
+  transition: opacity 280ms ease;
 }
 
 .shop-hero__visual::after {
   content: "";
   position: absolute;
   inset: 0;
+  z-index: 2;
   background: linear-gradient(180deg, transparent 52%, rgba(14, 43, 26, 0.56));
   pointer-events: none;
 }
@@ -116,6 +131,20 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  z-index: 1;
+  opacity: 0;
+  transform: scale(1.015);
+  transition: opacity 420ms ease, transform 700ms ease;
+}
+
+.shop-hero__visual--loaded::before {
+  opacity: 0;
+  animation: none;
+}
+
+.shop-hero__visual--loaded > img {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .shop-hero__visual figcaption {
@@ -123,7 +152,7 @@
   right: 24px;
   bottom: 22px;
   left: 24px;
-  z-index: 1;
+  z-index: 3;
   display: flex;
   flex-direction: column;
   color: #fff;
@@ -140,6 +169,11 @@
 .shop-hero__visual figcaption strong {
   margin-top: 5px;
   font-size: 1.1rem;
+}
+
+@keyframes shop-hero-loading {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
 }
 
 .shop-assurances {
@@ -450,5 +484,15 @@
 
   .shop-category-card {
     min-height: 190px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shop-hero__visual::before {
+    animation: none;
+  }
+
+  .shop-hero__visual > img {
+    transition: opacity 180ms ease;
   }
 }

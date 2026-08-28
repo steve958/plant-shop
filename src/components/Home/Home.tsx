@@ -63,6 +63,7 @@ const featuredCategories = [
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [heroImageLoaded, setHeroImageLoaded] = useState(false);
   const [sortBy, setSortBy] = useState("nameAsc");
   const [manufacturerFilter, setManufacturerFilter] = useState<string[]>([]);
   const searchQuery = useSelector((state: RootState) => state.search.query);
@@ -181,8 +182,15 @@ export default function Home() {
               </a>
             </div>
           </div>
-          <figure className="shop-hero__visual">
-            <img src={heroImage} alt="Mlada biljka u kvalitetno pripremljenom zemljištu" decoding="async" fetchPriority="high" />
+          <figure className={`shop-hero__visual ${heroImageLoaded ? "shop-hero__visual--loaded" : ""}`}>
+            <img
+              src={heroImage}
+              alt="Mlada biljka u kvalitetno pripremljenom zemljištu"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+              onLoad={() => setHeroImageLoaded(true)}
+            />
             <figcaption>
               <span>Plant Centar preporuka</span>
               <strong>Pravi proizvod u pravo vreme</strong>
