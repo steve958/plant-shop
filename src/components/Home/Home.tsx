@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -28,6 +28,7 @@ type Product = {
   images: string[];
   category: string;
   manufacturer: string;
+  packaging?: string;
   description?: string;
   onDiscount?: boolean;
   discountPrice?: number;
@@ -64,6 +65,7 @@ export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [heroImageLoaded, setHeroImageLoaded] = useState(false);
+  const heroImageRef = useRef<HTMLImageElement>(null);
   const [sortBy, setSortBy] = useState("nameAsc");
   const [manufacturerFilter, setManufacturerFilter] = useState<string[]>([]);
   const searchQuery = useSelector((state: RootState) => state.search.query);
@@ -92,6 +94,11 @@ export default function Home() {
     };
 
     fetchProducts();
+  }, []);
+
+  useLayoutEffect(() => {
+    const image = heroImageRef.current;
+    if (image?.complete && image.naturalWidth > 0) setHeroImageLoaded(true);
   }, []);
 
   const availableManufacturers = useMemo(
@@ -184,6 +191,7 @@ export default function Home() {
           </div>
           <figure className={`shop-hero__visual ${heroImageLoaded ? "shop-hero__visual--loaded" : ""}`}>
             <img
+              ref={heroImageRef}
               src={heroImage}
               alt="Mlada biljka u kvalitetno pripremljenom zemljištu"
               loading="eager"

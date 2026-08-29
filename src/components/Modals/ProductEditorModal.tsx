@@ -18,6 +18,7 @@ type Product = {
   category: string;
   subcategory: string;
   manufacturer: string;
+  packaging?: string;
   price: number;
   images: string[];
   description: string;
@@ -40,6 +41,11 @@ type ProductEditorModalProps = {
 
 const MAX_IMAGES = 5;
 
+const normalizePrice = (value: string) => {
+  const parsedValue = Number(value);
+  return Number.isFinite(parsedValue) ? Math.round((parsedValue + Number.EPSILON) * 100) / 100 : Number.NaN;
+};
+
 const uploadImage = (file: File, onProgress: (progress: number) => void) => {
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
   const imageRef = ref(storage, `images/${Date.now()}-${crypto.randomUUID()}-${safeName}`);
@@ -61,6 +67,7 @@ export default function ProductEditorModal({ product, onClose, onSaved }: Produc
   const [category, setCategory] = useState(product?.category ?? '');
   const [subcategory, setSubcategory] = useState(product?.subcategory ?? '');
   const [manufacturer, setManufacturer] = useState(product?.manufacturer ?? '');
+  const [packaging, setPackaging] = useState(product?.packaging ?? '');
   const [price, setPrice] = useState(product ? String(product.price) : '');
   const [description, setDescription] = useState(product?.description ?? '');
   const [onDiscount, setOnDiscount] = useState(product?.onDiscount ?? false);
@@ -121,8 +128,8 @@ export default function ProductEditorModal({ product, onClose, onSaved }: Produc
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    const regularPrice = Number(price);
-    const salePrice = Number(discountPrice);
+    const regularPrice = normalizePrice(price);
+    const salePrice = normalizePrice(discountPrice);
     if (!category || !subcategory) {
       toast.error('Izaberite kategoriju i podkategoriju.');
       return;
@@ -159,6 +166,7 @@ export default function ProductEditorModal({ product, onClose, onSaved }: Produc
         category,
         subcategory,
         manufacturer: manufacturer.trim(),
+        packaging: packaging.trim(),
         price: regularPrice,
         description: description.trim(),
         images: [...existingImages, ...uploadedImages],
@@ -210,16 +218,17 @@ export default function ProductEditorModal({ product, onClose, onSaved }: Produc
               <label className="product-editor__field product-editor__field--wide"><span>Naziv proizvoda</span><input type="text" value={name} onChange={(event) => setName(event.target.value)} placeholder="Na primer: Verimark 10 ml" required autoFocus /></label>
               <label className="product-editor__field"><span>Kategorija</span><select value={category} onChange={(event) => handleCategoryChange(event.target.value)} required><option value="">Izaberite kategoriju</option>{catalogCategories.map((item) => <option key={item.label} value={item.label}>{item.label}</option>)}</select></label>
               <label className="product-editor__field"><span>Podkategorija</span><select value={subcategory} onChange={(event) => setSubcategory(event.target.value)} required disabled={!category}><option value="">Izaberite podkategoriju</option>{subcategories.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
-              <label className="product-editor__field product-editor__field--wide"><span>Proizvođač</span><input type="text" value={manufacturer} onChange={(event) => setManufacturer(event.target.value)} placeholder="Naziv proizvođača ili brenda" required /></label>
+              <label className="product-editor__field"><span>Proizvođač</span><input type="text" value={manufacturer} onChange={(event) => setManufacturer(event.target.value)} placeholder="Naziv proizvođača ili brenda" required /></label>
+              <label className="product-editor__field"><span>Pakovanje (opciono)</span><input type="text" value={packaging} onChange={(event) => setPackaging(event.target.value)} placeholder="Na primer: 1 kg, 500 g, 1 L, 250 ml" maxLength={50} /></label>
             </div>
           </section>
 
           <section className="product-editor__section">
             <div className="product-editor__section-heading"><strong>Cena i ponuda</strong><span>Podesite redovnu ili akcijsku cenu</span></div>
             <div className="product-editor__price-row">
-              <label className="product-editor__field"><span>Redovna cena (RSD)</span><input type="number" min="0.01" step="0.01" value={price} onChange={(event) => setPrice(event.target.value)} placeholder="0,00" required /></label>
+              <label className="product-editor__field"><span>Redovna cena (RSD)</span><input type="number" min="0.01" step="0.01" value={price} onChange={(event) => setPrice(event.target.value)} onWheel={(event) => event.currentTarget.blur()} placeholder="0,00" required /></label>
               <label className="product-editor__switch"><input type="checkbox" checked={onDiscount} onChange={(event) => setOnDiscount(event.target.checked)} /><span aria-hidden="true" /><div><strong>Artikal je na akciji</strong><small>Prikaži sniženu cenu u prodavnici</small></div></label>
-              {onDiscount && <label className="product-editor__field"><span>Akcijska cena (RSD)</span><input type="number" min="0.01" step="0.01" value={discountPrice} onChange={(event) => setDiscountPrice(event.target.value)} placeholder="0,00" required /></label>}
+              {onDiscount && <label className="product-editor__field"><span>Akcijska cena (RSD)</span><input type="number" min="0.01" step="0.01" value={discountPrice} onChange={(event) => setDiscountPrice(event.target.value)} onWheel={(event) => event.currentTarget.blur()} placeholder="0,00" required /></label>}
             </div>
           </section>
 

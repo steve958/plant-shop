@@ -28,6 +28,7 @@ import './AdminPanel.css';
 
 export type Product = {
   productId: string; name: string; category: string; subcategory: string; manufacturer: string;
+  packaging?: string;
   price: number; images: string[]; description: string;
   onDiscount?: boolean; discountPrice?: number;
 };
@@ -286,7 +287,7 @@ export default function AdminPanel() {
                 <thead><tr><th>Proizvod</th><th>Kategorija</th><th>Cena</th><th>Status</th><th>Fotografije</th><th><span className="sr-only">Akcije</span></th></tr></thead>
                 <tbody>{paginatedProducts.map((product) => (
                   <tr key={product.productId} className={previewMode ? '' : 'product-row'} onClick={() => !previewMode && setSelectedProduct(product)}>
-                    <td><div className="admin-product-cell"><img src={product.images?.[0] || productPlaceholder} alt="" loading="lazy" decoding="async" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} /><div><strong>{product.name}</strong><span>{product.manufacturer || 'Bez proizvođača'}</span></div></div></td>
+                    <td><div className="admin-product-cell"><img src={product.images?.[0] || productPlaceholder} alt="" loading="lazy" decoding="async" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} /><div><strong>{product.name}</strong><span>{product.manufacturer || 'Bez proizvođača'}{product.packaging ? ` · ${product.packaging}` : ''}</span></div></div></td>
                     <td><strong className="admin-category">{product.category || '—'}</strong><span className="admin-subcategory">{product.subcategory || 'Bez podkategorije'}</span></td>
                     <td><strong className="admin-price">{formatPrice(product.onDiscount && product.discountPrice ? product.discountPrice : product.price)}</strong>{product.onDiscount && product.discountPrice ? <del>{formatPrice(product.price)}</del> : null}</td>
                     <td>{product.onDiscount ? <span className="admin-badge admin-badge-sale">Akcija</span> : <span className="admin-badge">Redovna cena</span>}</td>

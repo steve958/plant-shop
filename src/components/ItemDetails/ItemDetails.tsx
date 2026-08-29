@@ -22,6 +22,7 @@ type Product = {
   category?: string;
   subcategory?: string;
   manufacturer?: string;
+  packaging?: string;
   onDiscount?: boolean;
   discountPrice?: number | null;
 };
@@ -52,6 +53,7 @@ export default function ItemDetails() {
           category: data.category || '',
           subcategory: data.subcategory || '',
           manufacturer: data.manufacturer || '',
+          packaging: data.packaging || '',
           onDiscount: Boolean(data.onDiscount),
           discountPrice: typeof data.discountPrice === 'number' ? data.discountPrice : null,
         });
@@ -119,6 +121,7 @@ export default function ItemDetails() {
                 {product.category && <div><dt>Kategorija</dt><dd>{product.category}</dd></div>}
                 {product.subcategory && <div><dt>Namena</dt><dd>{product.subcategory}</dd></div>}
                 {product.manufacturer && <div><dt>Proizvođač</dt><dd>{product.manufacturer}</dd></div>}
+                {product.packaging && <div><dt>Pakovanje</dt><dd>{product.packaging}</dd></div>}
               </dl>
               {product.description ? <div className="product-description"><h2>Opis proizvoda</h2><p>{product.description}</p></div> : <div className="product-description product-description--empty"><h2>Informacije o proizvodu</h2><p>Za dodatne informacije o primeni i dostupnosti kontaktirajte naš stručni tim.</p></div>}
               <div className="quantity-actions">

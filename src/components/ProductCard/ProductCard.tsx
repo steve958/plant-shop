@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import productPlaceholder from "../../assets/product-placeholder.svg";
@@ -10,6 +10,7 @@ type Product = {
   price: number;
   images: string[];
   manufacturer?: string;
+  packaging?: string;
   description?: string;
   onDiscount?: boolean;
   discountPrice?: number;
@@ -34,8 +35,12 @@ export default function ProductCard({
 }: ProductCardProps) {
   const imageSource = product.images?.[0]?.trim() || productPlaceholder;
   const [imageLoaded, setImageLoaded] = useState(false);
+  const imageRef = useRef<HTMLImageElement>(null);
 
-  useEffect(() => setImageLoaded(false), [imageSource]);
+  useLayoutEffect(() => {
+    const image = imageRef.current;
+    setImageLoaded(Boolean(image?.complete && image.naturalWidth > 0));
+  }, [imageSource]);
 
   const hasDiscount = Boolean(
     product.onDiscount &&
@@ -64,6 +69,7 @@ export default function ProductCard({
           <span className="catalog-card__badge">−{discountPercent}%</span>
         )}
         <img
+          ref={imageRef}
           src={imageSource}
           alt={product.name}
           loading="lazy"
@@ -79,9 +85,12 @@ export default function ProductCard({
       </button>
 
       <div className="catalog-card__content">
-        <span className="catalog-card__brand">
-          {product.manufacturer || "Plant Centar preporuka"}
-        </span>
+        <div className="catalog-card__meta">
+          <span className="catalog-card__brand">
+            {product.manufacturer || "Plant Centar preporuka"}
+          </span>
+          {product.packaging && <span className="catalog-card__packaging">{product.packaging}</span>}
+        </div>
         <h3>
           <button type="button" onClick={() => onClick(product.productId)}>
             {product.name}

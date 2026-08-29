@@ -129,13 +129,37 @@
   padding: 22px 22px 20px;
 }
 
-.catalog-card__brand {
+.catalog-card__meta {
+  width: 100%;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   margin-bottom: 8px;
+}
+
+.catalog-card__brand {
+  min-width: 0;
+  overflow: hidden;
   color: #48913f;
   font-size: 0.64rem;
   font-weight: 700;
   letter-spacing: 0.09em;
+  text-overflow: ellipsis;
   text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.catalog-card__packaging {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: var(--shop-green-700);
+  background: #edf3ea;
+  font-size: 0.62rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .catalog-card h3 {

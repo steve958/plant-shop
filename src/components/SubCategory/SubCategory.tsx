@@ -24,6 +24,7 @@ type Product = {
     category: string;
     size: string[];
     manufacturer: string;
+    packaging?: string;
     description?: string;
     onDiscount?: boolean;
     discountPrice?: number;
