@@ -80,8 +80,8 @@
   border-radius: 999px;
   color: #fff;
   background: var(--shop-green-700);
-  font-size: 0.7rem;
-  font-weight: 850;
+  font-size: 0.68rem;
+  font-weight: 700;
   letter-spacing: 0.035em;
 }
 
@@ -97,8 +97,8 @@
   border-radius: 999px;
   color: var(--shop-green-700);
   background: rgba(255, 255, 255, 0.92);
-  font-size: 0.67rem;
-  font-weight: 800;
+  font-size: 0.7rem;
+  font-weight: 600;
   opacity: 0;
   transform: translateY(5px);
   transition: opacity 180ms ease, transform 180ms ease;
@@ -132,8 +132,8 @@
 .catalog-card__brand {
   margin-bottom: 8px;
   color: #48913f;
-  font-size: 0.65rem;
-  font-weight: 850;
+  font-size: 0.64rem;
+  font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }
@@ -141,7 +141,7 @@
 .catalog-card h3 {
   min-height: 2.8em;
   margin: 0;
-  font-size: 1.04rem;
+  font-size: 1rem;
   line-height: 1.38;
 }
 
@@ -151,7 +151,7 @@
   color: var(--shop-green-900);
   background: transparent;
   font: inherit;
-  font-weight: 760;
+  font-weight: 600;
   text-align: left;
   cursor: pointer;
 }
@@ -169,6 +169,7 @@
   overflow: hidden;
   color: var(--shop-muted);
   font-size: 0.76rem;
+  font-weight: 400;
   line-height: 1.6;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -200,6 +201,7 @@
 .catalog-card__price strong {
   color: var(--shop-green-900);
   font-size: 1rem;
+  font-weight: 650;
   letter-spacing: -0.02em;
   white-space: nowrap;
 }

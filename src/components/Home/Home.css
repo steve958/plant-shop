@@ -26,8 +26,8 @@
   display: block;
   margin-bottom: 12px;
   color: #3e9234;
-  font-size: 0.72rem;
-  font-weight: 850;
+  font-size: 0.64rem;
+  font-weight: 700;
   letter-spacing: 0.15em;
   text-transform: uppercase;
 }
@@ -36,18 +36,19 @@
   max-width: 650px;
   margin: 0;
   color: var(--shop-green-900);
-  font-size: clamp(2.7rem, 5.3vw, 4.7rem);
-  font-weight: 720;
-  letter-spacing: -0.055em;
-  line-height: 0.98;
+  font-size: clamp(2.65rem, 5vw, 4.25rem);
+  font-weight: 650;
+  letter-spacing: -0.045em;
+  line-height: 1.02;
 }
 
 .shop-hero__content > p {
   max-width: 590px;
   margin: 24px 0 0;
   color: #667069;
-  font-size: 1rem;
-  line-height: 1.8;
+  font-size: 0.94rem;
+  font-weight: 400;
+  line-height: 1.7;
 }
 
 .shop-hero__actions {
@@ -65,8 +66,8 @@
   gap: 9px;
   padding: 0 20px;
   border-radius: 999px;
-  font-size: 0.76rem;
-  font-weight: 820;
+  font-size: 0.75rem;
+  font-weight: 650;
   text-decoration: none;
   transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
@@ -160,15 +161,16 @@
 
 .shop-hero__visual figcaption span {
   color: #b6eeaa;
-  font-size: 0.66rem;
-  font-weight: 800;
+  font-size: 0.64rem;
+  font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .shop-hero__visual figcaption strong {
   margin-top: 5px;
-  font-size: 1.1rem;
+  font-size: 1.08rem;
+  font-weight: 600;
 }
 
 @keyframes shop-hero-loading {
@@ -216,14 +218,15 @@
   display: flex;
   flex-direction: column;
   color: #758078;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   line-height: 1.5;
 }
 
 .shop-assurances strong {
   margin-bottom: 2px;
   color: var(--shop-green-900);
-  font-size: 0.78rem;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
 .shop-categories,
@@ -252,16 +255,17 @@
 .shop-section-heading h2 {
   margin: 0;
   color: var(--shop-green-900);
-  font-size: clamp(2rem, 3.5vw, 3rem);
-  font-weight: 720;
-  letter-spacing: -0.045em;
+  font-size: clamp(2rem, 4vw, 2.7rem);
+  font-weight: 650;
+  letter-spacing: -0.035em;
   line-height: 1.08;
 }
 
 .shop-section-heading > p {
   color: var(--shop-muted);
-  font-size: 0.82rem;
-  line-height: 1.7;
+  font-size: 0.81rem;
+  font-weight: 400;
+  line-height: 1.65;
 }
 
 .shop-categories__grid {
@@ -318,13 +322,15 @@
 
 .shop-category-card__copy strong {
   color: var(--shop-green-900);
-  font-size: 1rem;
+  font-size: 0.94rem;
+  font-weight: 600;
 }
 
 .shop-category-card__copy small {
   margin-top: 8px;
   color: var(--shop-muted);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
+  font-weight: 400;
   line-height: 1.55;
 }
 

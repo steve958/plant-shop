@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+
 :root {
   --shop-green-900: #173d2b;
   --shop-green-800: #22523a;
@@ -28,6 +30,8 @@ body {
   min-height: 100vh;
   margin: 0;
   background: var(--shop-warm);
+  font-size: 16px;
+  font-weight: 400;
 }
 
 button,

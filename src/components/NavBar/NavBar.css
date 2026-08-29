@@ -35,8 +35,8 @@
   margin: 0;
   padding: 22px 12px 19px;
   color: #34483b;
-  font-size: 0.8rem;
-  font-weight: 750;
+  font-size: 0.94rem;
+  font-weight: 600;
   white-space: nowrap;
   transition: color 180ms ease;
 }
@@ -99,8 +99,8 @@
   padding: 7px 12px;
   border-radius: 12px;
   color: #34503f;
-  font-size: 0.76rem;
-  font-weight: 650;
+  font-size: 0.88rem;
+  font-weight: 500;
   line-height: 1.35;
   white-space: normal;
   cursor: pointer;
@@ -135,7 +135,7 @@
 
   .nav-item h3 {
     padding-inline: 8px;
-    font-size: 0.72rem;
+    font-size: 0.8rem;
   }
 }
 
@@ -167,8 +167,8 @@
   }
 
   .hamburger-icon strong {
-    font-size: 0.77rem;
-    font-weight: 800;
+    font-size: 0.88rem;
+    font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
   }
@@ -235,8 +235,8 @@
 
   .mobile-nav-title span {
     color: var(--shop-green-500);
-    font-size: 0.66rem;
-    font-weight: 800;
+    font-size: 0.68rem;
+    font-weight: 700;
     letter-spacing: 0.13em;
     text-transform: uppercase;
   }
@@ -244,7 +244,8 @@
   .mobile-nav-title strong {
     margin-top: 5px;
     color: var(--shop-green-900);
-    font-size: 1.45rem;
+    font-size: 1.5rem;
+    font-weight: 650;
   }
 
   .mobile-nav-item {
@@ -263,8 +264,8 @@
   .mobile-nav-item-header h3 {
     flex: 1;
     color: #334a3c;
-    font-size: 0.9rem;
-    font-weight: 750;
+    font-size: 0.94rem;
+    font-weight: 600;
     cursor: pointer;
   }
 
@@ -300,7 +301,8 @@
     padding: 7px 8px;
     border-radius: 12px;
     color: #59675f;
-    font-size: 0.78rem;
+    font-size: 0.82rem;
+    font-weight: 500;
     line-height: 1.35;
     cursor: pointer;
   }

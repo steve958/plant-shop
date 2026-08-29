@@ -44,8 +44,8 @@
 .shop-footer__cta span {
   margin-bottom: 6px;
   color: #9bd38c;
-  font-size: 0.68rem;
-  font-weight: 820;
+  font-size: 0.64rem;
+  font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -54,6 +54,7 @@
   max-width: 690px;
   color: #fff;
   font-size: clamp(1.25rem, 2.6vw, 1.9rem);
+  font-weight: 600;
   line-height: 1.25;
 }
 
@@ -67,8 +68,8 @@
   border-radius: 999px;
   color: #113021;
   background: #68c958;
-  font-size: 0.73rem;
-  font-weight: 820;
+  font-size: 0.75rem;
+  font-weight: 650;
   text-decoration: none;
   white-space: nowrap;
   transition: transform 180ms ease, background 180ms ease;
@@ -105,7 +106,8 @@
 .shop-footer__column p {
   margin-top: 18px;
   color: #bcc8c0;
-  font-size: 0.76rem;
+  font-size: 0.78rem;
+  font-weight: 400;
   line-height: 1.7;
 }
 
@@ -119,12 +121,14 @@
 .shop-footer__column h3 {
   margin: 0 0 8px;
   color: #fff;
-  font-size: 0.83rem;
+  font-size: 0.88rem;
+  font-weight: 600;
 }
 
 .shop-footer__column > a {
   color: #bcc8c0;
-  font-size: 0.74rem;
+  font-size: 0.78rem;
+  font-weight: 400;
   line-height: 1.5;
   text-decoration: none;
   transition: color 160ms ease;
@@ -171,7 +175,7 @@
   padding: 20px 10px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.11);
   color: #9caaa1;
-  font-size: 0.67rem;
+  font-size: 0.72rem;
 }
 
 .shop-footer__bottom a {

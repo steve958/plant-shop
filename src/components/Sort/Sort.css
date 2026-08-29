@@ -31,8 +31,8 @@
 
 .catalog-sort__copy small {
   color: #879089;
-  font-size: 0.61rem;
-  font-weight: 750;
+  font-size: 0.64rem;
+  font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
@@ -40,7 +40,8 @@
 .catalog-sort__copy strong {
   margin-top: 2px;
   color: var(--shop-green-900);
-  font-size: 0.86rem;
+  font-size: 0.88rem;
+  font-weight: 600;
 }
 
 .catalog-sort select {
@@ -55,8 +56,8 @@
   appearance: none;
   color: #4d5e53;
   background: #f8faf7;
-  font-size: 0.73rem;
-  font-weight: 650;
+  font-size: 0.78rem;
+  font-weight: 500;
   cursor: pointer;
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }

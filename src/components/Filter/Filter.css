@@ -40,8 +40,8 @@
 
 .catalog-filter__header-copy small {
   color: #879089;
-  font-size: 0.61rem;
-  font-weight: 750;
+  font-size: 0.64rem;
+  font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
@@ -49,7 +49,8 @@
 .catalog-filter__header-copy strong {
   margin-top: 2px;
   color: var(--shop-green-900);
-  font-size: 0.86rem;
+  font-size: 0.88rem;
+  font-weight: 600;
 }
 
 .catalog-filter__count {
@@ -62,7 +63,7 @@
   color: #fff;
   background: var(--shop-green-700);
   font-size: 0.64rem;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .catalog-filter__chevron {
@@ -95,7 +96,7 @@
   color: var(--shop-green-700);
   background: var(--shop-green-100);
   font-size: 0.64rem;
-  font-weight: 750;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -138,7 +139,7 @@
   outline: none;
   color: var(--shop-ink);
   background: #f8faf7;
-  font-size: 0.72rem;
+  font-size: 0.76rem;
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
@@ -166,7 +167,8 @@
   padding: 5px 8px;
   border-radius: 9px;
   color: #4d5e53;
-  font-size: 0.74rem;
+  font-size: 0.78rem;
+  font-weight: 400;
   cursor: pointer;
   transition: color 150ms ease, background 150ms ease;
 }
@@ -244,7 +246,7 @@
   color: var(--shop-green-700);
   background: transparent;
   font-size: 0.65rem;
-  font-weight: 800;
+  font-weight: 600;
   cursor: pointer;
 }
 
