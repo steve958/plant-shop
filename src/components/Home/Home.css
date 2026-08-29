@@ -231,6 +231,7 @@
 
 .shop-categories,
 .shop-products {
+  scroll-margin-top: 92px;
   padding: 84px 0 92px;
 }
 

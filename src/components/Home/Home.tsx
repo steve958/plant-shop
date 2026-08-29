@@ -255,7 +255,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="shop-products" id="akcija">
+      <section className="shop-products" id="akcija" data-product-catalogue>
         <div className="shop-home__shell">
           <header className="shop-section-heading shop-section-heading--products">
             <div>

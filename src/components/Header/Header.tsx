@@ -4,7 +4,7 @@ import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import ArrowOutwardIcon from "@mui/icons-material/ArrowOutward";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../Redux/store";
 import { setSearchQuery } from "../Redux/searchSlice";
@@ -12,6 +12,7 @@ import PlantCentarLogo from "../../assets/plant-centar-logo-horizontalni.svg";
 
 export default function Header() {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const user = useSelector((state: RootState) => state.auth.user);
   const cartItems = useSelector((state: RootState) => state.cart.items);
@@ -19,6 +20,16 @@ export default function Header() {
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     dispatch(setSearchQuery(event.target.value));
+  };
+
+  const handleSearchFocus = () => {
+    const catalogue = document.querySelector<HTMLElement>("[data-product-catalogue]");
+    if (catalogue) {
+      catalogue.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
+    if (location.pathname !== "/početna") navigate("/početna#akcija");
   };
 
   return (
@@ -53,6 +64,7 @@ export default function Header() {
             <input
               type="search"
               placeholder="Pretražite proizvode, brendove i namenu..."
+              onFocus={handleSearchFocus}
               onChange={handleSearchChange}
             />
             <SearchOutlinedIcon className="shop-search__icon" aria-hidden="true" />

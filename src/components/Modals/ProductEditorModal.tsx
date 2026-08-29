@@ -35,6 +35,8 @@ type PreviewItem = {
 
 type ProductEditorModalProps = {
   product?: Product;
+  duplicate?: boolean;
+  protectedImageUrls?: Set<string>;
   onClose: () => void;
   onSaved: (product: Product) => void;
 };
@@ -60,14 +62,15 @@ const uploadImage = (file: File, onProgress: (progress: number) => void) => {
   });
 };
 
-export default function ProductEditorModal({ product, onClose, onSaved }: ProductEditorModalProps) {
+export default function ProductEditorModal({ product, duplicate = false, protectedImageUrls = new Set(), onClose, onSaved }: ProductEditorModalProps) {
   const user = useSelector((state: RootState) => state.auth.user);
-  const editing = Boolean(product);
+  const editing = Boolean(product) && !duplicate;
+  const duplicating = Boolean(product) && duplicate;
   const [name, setName] = useState(product?.name ?? '');
   const [category, setCategory] = useState(product?.category ?? '');
   const [subcategory, setSubcategory] = useState(product?.subcategory ?? '');
   const [manufacturer, setManufacturer] = useState(product?.manufacturer ?? '');
-  const [packaging, setPackaging] = useState(product?.packaging ?? '');
+  const [packaging, setPackaging] = useState(duplicating ? '' : product?.packaging ?? '');
   const [price, setPrice] = useState(product ? String(product.price) : '');
   const [description, setDescription] = useState(product?.description ?? '');
   const [onDiscount, setOnDiscount] = useState(product?.onDiscount ?? false);
@@ -118,7 +121,7 @@ export default function ProductEditorModal({ product, onClose, onSaved }: Produc
   const removeImage = (id: string) => {
     const selected = previews.find((preview) => preview.id === id);
     if (!selected) return;
-    if (selected.existing) setRemovedImages((current) => [...current, selected.url]);
+    if (selected.existing && editing && !protectedImageUrls.has(selected.url)) setRemovedImages((current) => [...current, selected.url]);
     else {
       URL.revokeObjectURL(selected.url);
       localObjectUrls.current = localObjectUrls.current.filter((url) => url !== selected.url);
@@ -132,6 +135,10 @@ export default function ProductEditorModal({ product, onClose, onSaved }: Produc
     const salePrice = normalizePrice(discountPrice);
     if (!category || !subcategory) {
       toast.error('Izaberite kategoriju i podkategoriju.');
+      return;
+    }
+    if (duplicating && (!packaging.trim() || packaging.trim().toLocaleLowerCase('sr-Latn') === product?.packaging?.trim().toLocaleLowerCase('sr-Latn'))) {
+      toast.error('Unesite novo pakovanje koje se razlikuje od originalnog proizvoda.');
       return;
     }
     if (!Number.isFinite(regularPrice) || regularPrice <= 0) {
@@ -175,7 +182,7 @@ export default function ProductEditorModal({ product, onClose, onSaved }: Produc
       };
 
       let savedProduct: Product;
-      if (product) {
+      if (editing && product) {
         await updateDoc(doc(db, 'products', product.productId), savedProductData);
         savedProduct = { ...savedProductData, productId: product.productId, discountPrice: onDiscount ? salePrice : undefined };
       } else {
@@ -191,7 +198,7 @@ export default function ProductEditorModal({ product, onClose, onSaved }: Produc
         }
       }));
 
-      toast.success(editing ? 'Proizvod je uspešno izmenjen.' : 'Proizvod je uspešno dodat.');
+      toast.success(editing ? 'Proizvod je uspešno izmenjen.' : duplicating ? 'Kopija proizvoda je uspešno napravljena.' : 'Proizvod je uspešno dodat.');
       onSaved(savedProduct);
     } catch (error) {
       console.error('Error saving product:', error);
@@ -207,7 +214,7 @@ export default function ProductEditorModal({ product, onClose, onSaved }: Produc
     <div className="product-editor-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !loading) onClose(); }}>
       <form className="product-editor" onSubmit={handleSubmit} aria-labelledby="product-editor-title">
         <header className="product-editor__header">
-          <div><span>Katalog proizvoda</span><h2 id="product-editor-title">{editing ? 'Izmena proizvoda' : 'Novi proizvod'}</h2><p>{editing ? 'Ažurirajte podatke, cenu i fotografije odabranog artikla.' : 'Unesite podatke potrebne da se artikal prikaže u prodavnici.'}</p></div>
+          <div><span>Katalog proizvoda</span><h2 id="product-editor-title">{editing ? 'Izmena proizvoda' : duplicating ? 'Novo pakovanje proizvoda' : 'Novi proizvod'}</h2><p>{editing ? 'Ažurirajte podatke, cenu i fotografije odabranog artikla.' : duplicating ? 'Podaci su preuzeti sa originala. Unesite novo pakovanje i po potrebi prilagodite cenu.' : 'Unesite podatke potrebne da se artikal prikaže u prodavnici.'}</p></div>
           <button type="button" onClick={onClose} disabled={loading} aria-label="Zatvori"><CloseIcon /></button>
         </header>
 
@@ -215,11 +222,11 @@ export default function ProductEditorModal({ product, onClose, onSaved }: Produc
           <section className="product-editor__section">
             <div className="product-editor__section-heading"><strong>Osnovni podaci</strong><span>Naziv, klasifikacija i proizvođač</span></div>
             <div className="product-editor__grid">
-              <label className="product-editor__field product-editor__field--wide"><span>Naziv proizvoda</span><input type="text" value={name} onChange={(event) => setName(event.target.value)} placeholder="Na primer: Verimark 10 ml" required autoFocus /></label>
+              <label className="product-editor__field product-editor__field--wide"><span>Naziv proizvoda</span><input type="text" value={name} onChange={(event) => setName(event.target.value)} placeholder="Na primer: Verimark 10 ml" required autoFocus={!duplicating} /></label>
               <label className="product-editor__field"><span>Kategorija</span><select value={category} onChange={(event) => handleCategoryChange(event.target.value)} required><option value="">Izaberite kategoriju</option>{catalogCategories.map((item) => <option key={item.label} value={item.label}>{item.label}</option>)}</select></label>
               <label className="product-editor__field"><span>Podkategorija</span><select value={subcategory} onChange={(event) => setSubcategory(event.target.value)} required disabled={!category}><option value="">Izaberite podkategoriju</option>{subcategories.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
               <label className="product-editor__field"><span>Proizvođač</span><input type="text" value={manufacturer} onChange={(event) => setManufacturer(event.target.value)} placeholder="Naziv proizvođača ili brenda" required /></label>
-              <label className="product-editor__field"><span>Pakovanje (opciono)</span><input type="text" value={packaging} onChange={(event) => setPackaging(event.target.value)} placeholder="Na primer: 1 kg, 500 g, 1 L, 250 ml" maxLength={50} /></label>
+              <label className="product-editor__field"><span>Pakovanje {duplicating ? '(obavezno)' : '(opciono)'}</span><input type="text" value={packaging} onChange={(event) => setPackaging(event.target.value)} placeholder="Na primer: 1 kg, 500 g, 1 L, 250 ml" maxLength={50} required={duplicating} autoFocus={duplicating} /></label>
             </div>
           </section>
 
@@ -244,7 +251,7 @@ export default function ProductEditorModal({ product, onClose, onSaved }: Produc
           </section>
         </div>
 
-        <footer className="product-editor__footer"><span>{loading && uploadProgress > 0 ? `Otpremanje fotografija ${Math.round(uploadProgress)}%` : 'Proverite podatke pre čuvanja.'}</span><div><button type="button" className="product-editor__cancel" onClick={onClose} disabled={loading}>Odustani</button><button type="submit" className="product-editor__save" disabled={loading}><SaveOutlinedIcon />{loading ? 'Čuvanje…' : editing ? 'Sačuvaj izmene' : 'Dodaj proizvod'}</button></div></footer>
+        <footer className="product-editor__footer"><span>{loading && uploadProgress > 0 ? `Otpremanje fotografija ${Math.round(uploadProgress)}%` : duplicating ? 'Originalni proizvod neće biti izmenjen.' : 'Proverite podatke pre čuvanja.'}</span><div><button type="button" className="product-editor__cancel" onClick={onClose} disabled={loading}>Odustani</button><button type="submit" className="product-editor__save" disabled={loading}><SaveOutlinedIcon />{loading ? 'Čuvanje…' : editing ? 'Sačuvaj izmene' : duplicating ? 'Kreiraj novo pakovanje' : 'Dodaj proizvod'}</button></div></footer>
       </form>
     </div>
   );

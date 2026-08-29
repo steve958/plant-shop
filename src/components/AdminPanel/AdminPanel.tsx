@@ -5,6 +5,7 @@ import { signOut } from 'firebase/auth';
 import { collection, deleteDoc, doc, getDocs, updateDoc } from 'firebase/firestore';
 import { deleteObject, ref } from 'firebase/storage';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import FilterAltOutlinedIcon from '@mui/icons-material/FilterAltOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
@@ -70,6 +71,7 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(true);
   const [newItemClicked, setNewItemClicked] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [duplicateProduct, setDuplicateProduct] = useState<Product | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
   const [manufacturerFilter, setManufacturerFilter] = useState<string[]>([]);
   const [manufacturerFilterResetKey, setManufacturerFilterResetKey] = useState(0);
@@ -204,8 +206,13 @@ export default function AdminPanel() {
   const handleDeleteConfirmed = async () => {
     if (!deleteTarget || previewMode) return;
     try {
+      const imagesUsedByOtherProducts = new Set(
+        products
+          .filter((product) => product.productId !== deleteTarget.productId)
+          .flatMap((product) => product.images || []),
+      );
       await deleteDoc(doc(db, 'products', deleteTarget.productId));
-      await Promise.all(deleteTarget.images.map(async (image) => {
+      await Promise.all(deleteTarget.images.filter((image) => !imagesUsedByOtherProducts.has(image)).map(async (image) => {
         try {
           await deleteObject(ref(storage, image));
         } catch (error) {
@@ -235,10 +242,17 @@ export default function AdminPanel() {
     navigate(previewMode ? '/početna' : '/admin/prijava');
   };
 
+  const getImagesUsedByOtherProducts = (productId: string) => new Set(
+    products
+      .filter((product) => product.productId !== productId)
+      .flatMap((product) => product.images || []),
+  );
+
   return (
     <main className="admin-panel-container">
       {!previewMode && newItemClicked && <ProductEditorModal onClose={() => setNewItemClicked(false)} onSaved={(product) => { setProducts((current) => [product, ...current]); setNewItemClicked(false); setCurrentPage(1); }} />}
-      {!previewMode && selectedProduct && <ProductEditorModal product={selectedProduct} onClose={() => setSelectedProduct(null)} onSaved={(product) => { setProducts((current) => current.map((item) => item.productId === product.productId ? product : item)); setSelectedProduct(null); }} />}
+      {!previewMode && selectedProduct && <ProductEditorModal product={selectedProduct} protectedImageUrls={getImagesUsedByOtherProducts(selectedProduct.productId)} onClose={() => setSelectedProduct(null)} onSaved={(product) => { setProducts((current) => current.map((item) => item.productId === product.productId ? product : item)); setSelectedProduct(null); }} />}
+      {!previewMode && duplicateProduct && <ProductEditorModal product={duplicateProduct} duplicate protectedImageUrls={new Set(duplicateProduct.images || [])} onClose={() => setDuplicateProduct(null)} onSaved={(product) => { setProducts((current) => [product, ...current]); setDuplicateProduct(null); setCurrentPage(1); }} />}
       <Dialog open={Boolean(deleteTarget)} onClose={() => setDeleteTarget(null)}>
         <DialogContent>Da li ste sigurni da želite da obrišete ovaj proizvod?</DialogContent>
         <DialogActions><Button onClick={() => setDeleteTarget(null)} color="inherit">Odustani</Button><Button onClick={handleDeleteConfirmed} color="error">Obriši</Button></DialogActions>
@@ -292,7 +306,7 @@ export default function AdminPanel() {
                     <td><strong className="admin-price">{formatPrice(product.onDiscount && product.discountPrice ? product.discountPrice : product.price)}</strong>{product.onDiscount && product.discountPrice ? <del>{formatPrice(product.price)}</del> : null}</td>
                     <td>{product.onDiscount ? <span className="admin-badge admin-badge-sale">Akcija</span> : <span className="admin-badge">Redovna cena</span>}</td>
                     <td onClick={(event) => event.stopPropagation()}><div className="admin-thumbnails">{(product.images || []).slice(0, 4).map((image, index) => <button key={`${image}-${index}`} title={previewMode ? 'Pregled je samo za čitanje' : 'Postavi kao glavnu fotografiju'} disabled={previewMode} onClick={() => handleImageSelect(product, index)}><img src={image} alt={`${product.name} ${index + 1}`} loading="lazy" decoding="async" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} /></button>)}{!product.images?.length && <span className="admin-no-image">Nema slika</span>}</div></td>
-                    <td onClick={(event) => event.stopPropagation()}><button className="admin-delete-button" title={previewMode ? 'Pregled je samo za čitanje' : 'Obriši proizvod'} disabled={previewMode} onClick={() => setDeleteTarget({ productId: product.productId, images: product.images || [] })}><DeleteOutlineIcon /></button></td>
+                    <td onClick={(event) => event.stopPropagation()}><div className="admin-row-actions"><button className="admin-duplicate-button" title={previewMode ? 'Pregled je samo za čitanje' : 'Dupliciraj za drugo pakovanje'} disabled={previewMode} onClick={() => setDuplicateProduct(product)} aria-label={`Dupliciraj ${product.name}`}><ContentCopyOutlinedIcon /></button><button className="admin-delete-button" title={previewMode ? 'Pregled je samo za čitanje' : 'Obriši proizvod'} disabled={previewMode} onClick={() => setDeleteTarget({ productId: product.productId, images: product.images || [] })} aria-label={`Obriši ${product.name}`}><DeleteOutlineIcon /></button></div></td>
                   </tr>
                 ))}</tbody>
               </table></div>

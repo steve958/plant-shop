@@ -151,7 +151,7 @@ export default function SubCategoryPage() {
 
     // 6) Render
     return (
-        <div className="sub-category-page-container">
+        <div className="sub-category-page-container" data-product-catalogue>
             <div className="sub-category-heading">
                 <span>Plant Centar asortiman</span>
                 <h1>{subCategory}</h1>
