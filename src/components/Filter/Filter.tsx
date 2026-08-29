@@ -8,9 +8,10 @@ import "./Filter.css";
 type FilterProps = {
   availableManufacturers: string[];
   onFilterChange: (filters: { manufacturers: string[] }) => void;
+  resetKey?: number;
 };
 
-const Filter = ({ availableManufacturers, onFilterChange }: FilterProps) => {
+const Filter = ({ availableManufacturers, onFilterChange, resetKey }: FilterProps) => {
   const [selectedManufacturers, setSelectedManufacturers] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(() =>
@@ -29,6 +30,13 @@ const Filter = ({ availableManufacturers, onFilterChange }: FilterProps) => {
       onFilterChange({ manufacturers: availableSelection });
     }
   }, [availableManufacturers, onFilterChange, selectedManufacturers]);
+
+  useEffect(() => {
+    if (resetKey === undefined) return;
+    setSelectedManufacturers([]);
+    setSearchTerm("");
+    onFilterChange({ manufacturers: [] });
+  }, [onFilterChange, resetKey]);
 
   const visibleManufacturers = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLocaleLowerCase("sr-Latn");

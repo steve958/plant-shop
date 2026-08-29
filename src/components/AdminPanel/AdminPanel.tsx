@@ -6,29 +6,58 @@ import { collection, deleteDoc, doc, getDocs, updateDoc } from 'firebase/firesto
 import { deleteObject, ref } from 'firebase/storage';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import FilterAltOutlinedIcon from '@mui/icons-material/FilterAltOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
+import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import { Button, Dialog, DialogActions, DialogContent } from '@mui/material';
 import { ScaleLoader } from 'react-spinners';
 import { auth, db, storage } from '../firebase';
 import { RootState } from '../Redux/store';
 import { logout } from '../Redux/authSlice';
-import AddItemModal from '../Modals/NewItemModal';
-import EditItemModal from '../Modals/EditItemModal';
+import ProductEditorModal from '../Modals/ProductEditorModal';
 import Filter from '../Filter/Filter';
 import Sort from '../Sort/Sort';
 import productPlaceholder from '../../assets/product-placeholder.svg';
+import { catalogCategories, getSubcategories } from '../../data/catalogCategories';
 import AdminOrders from '../AdminOrders/AdminOrders';
 import AdminNews from '../AdminNews/AdminNews';
 import './AdminPanel.css';
 
-type Product = {
+export type Product = {
   productId: string; name: string; category: string; subcategory: string; manufacturer: string;
-  gender: 'male' | 'female'; size: string[]; price: number; images: string[]; description: string;
+  price: number; images: string[]; description: string;
   onDiscount?: boolean; discountPrice?: number;
 };
 
 type DeleteTarget = { productId: string; images: string[] } | null;
+type ProductStatus = 'all' | 'regular' | 'discount' | 'missingImage';
+type PaginationItem = { key: string; page?: number; label: string };
+
+const PAGE_SIZE_OPTIONS = [10, 20, 50];
+
+const getPaginationItems = (currentPage: number, totalPages: number): PaginationItem[] => {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => ({
+      key: `page-${index + 1}`,
+      page: index + 1,
+      label: String(index + 1),
+    }));
+  }
+
+  const visiblePages = Array.from(new Set([1, totalPages, currentPage - 1, currentPage, currentPage + 1]))
+    .filter((page) => page >= 1 && page <= totalPages)
+    .sort((first, second) => first - second);
+  const items: PaginationItem[] = [];
+  visiblePages.forEach((page, index) => {
+    const previousPage = visiblePages[index - 1];
+    if (previousPage && page - previousPage > 1) items.push({ key: `ellipsis-${previousPage}-${page}`, label: '…' });
+    items.push({ key: `page-${page}`, page, label: String(page) });
+  });
+  return items;
+};
 
 export default function AdminPanel() {
   const location = useLocation();
@@ -42,7 +71,13 @@ export default function AdminPanel() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
   const [manufacturerFilter, setManufacturerFilter] = useState<string[]>([]);
+  const [manufacturerFilterResetKey, setManufacturerFilterResetKey] = useState(0);
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [subcategoryFilter, setSubcategoryFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<ProductStatus>('all');
   const [sortBy, setSortBy] = useState('nameAsc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
   const [activeView, setActiveView] = useState<'orders' | 'products' | 'news'>('orders');
 
   const fetchProducts = useCallback(async () => {
@@ -62,21 +97,95 @@ export default function AdminPanel() {
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
-  const availableManufacturers = useMemo(() => Array.from(new Set(products.map((product) => product.manufacturer).filter(Boolean))).sort(), [products]);
-  const displayedProducts = useMemo(() => {
-    let data = products.filter((product) => !searchQuery.trim() || product.name.toLowerCase().includes(searchQuery.toLowerCase()));
-    if (manufacturerFilter.length) data = data.filter((product) => manufacturerFilter.includes(product.manufacturer));
-    return [...data].sort((a, b) => {
-      if (sortBy === 'priceAsc') return a.price - b.price;
-      if (sortBy === 'priceDesc') return b.price - a.price;
-      if (sortBy === 'nameDesc') return b.name.localeCompare(a.name);
-      return a.name.localeCompare(b.name);
+  const availableManufacturers = useMemo(
+    () => Array.from(new Set(products.map((product) => product.manufacturer).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'sr')),
+    [products],
+  );
+
+  const availableCategories = useMemo(() => {
+    const productCategories = new Set(products.map((product) => product.category).filter(Boolean));
+    const configured = catalogCategories.map((category) => category.label).filter((category) => productCategories.has(category));
+    const unconfigured = Array.from(productCategories)
+      .filter((category) => !configured.includes(category))
+      .sort((a, b) => a.localeCompare(b, 'sr'));
+    return [...configured, ...unconfigured];
+  }, [products]);
+
+  const availableSubcategories = useMemo(() => {
+    const productSubcategories = products
+      .filter((product) => !categoryFilter || product.category === categoryFilter)
+      .map((product) => product.subcategory)
+      .filter(Boolean);
+    const configured = categoryFilter
+      ? getSubcategories(categoryFilter)
+      : catalogCategories.flatMap((category) => category.subcategories);
+    const uniqueProductSubcategories = new Set(productSubcategories);
+    const configuredAvailable = configured.filter((subcategory) => uniqueProductSubcategories.has(subcategory));
+    const unconfigured = Array.from(uniqueProductSubcategories)
+      .filter((subcategory) => !configuredAvailable.includes(subcategory))
+      .sort((a, b) => a.localeCompare(b, 'sr'));
+    return [...configuredAvailable, ...unconfigured];
+  }, [categoryFilter, products]);
+
+  const filteredProducts = useMemo(() => {
+    const normalizedSearch = searchQuery.trim().toLocaleLowerCase('sr-Latn');
+    let data = products.filter((product) => {
+      if (!normalizedSearch) return true;
+      return [product.name, product.manufacturer, product.category, product.subcategory]
+        .some((value) => value?.toLocaleLowerCase('sr-Latn').includes(normalizedSearch));
     });
-  }, [products, searchQuery, manufacturerFilter, sortBy]);
+    if (manufacturerFilter.length) data = data.filter((product) => manufacturerFilter.includes(product.manufacturer));
+    if (categoryFilter) data = data.filter((product) => product.category === categoryFilter);
+    if (subcategoryFilter) data = data.filter((product) => product.subcategory === subcategoryFilter);
+    if (statusFilter === 'regular') data = data.filter((product) => !product.onDiscount);
+    if (statusFilter === 'discount') data = data.filter((product) => product.onDiscount);
+    if (statusFilter === 'missingImage') data = data.filter((product) => !product.images?.length);
+
+    return [...data].sort((a, b) => {
+      if (sortBy === 'priceAsc') return Number(a.price) - Number(b.price);
+      if (sortBy === 'priceDesc') return Number(b.price) - Number(a.price);
+      if (sortBy === 'nameDesc') return b.name.localeCompare(a.name, 'sr');
+      return a.name.localeCompare(b.name, 'sr');
+    });
+  }, [products, searchQuery, manufacturerFilter, categoryFilter, subcategoryFilter, statusFilter, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [currentPage, filteredProducts, pageSize]);
+  const paginationItems = useMemo(() => getPaginationItems(currentPage, totalPages), [currentPage, totalPages]);
+  const resultStart = filteredProducts.length ? (currentPage - 1) * pageSize + 1 : 0;
+  const resultEnd = Math.min(currentPage * pageSize, filteredProducts.length);
+  const activeFilterCount = manufacturerFilter.length + Number(Boolean(categoryFilter)) + Number(Boolean(subcategoryFilter)) + Number(statusFilter !== 'all');
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, manufacturerFilter, categoryFilter, subcategoryFilter, statusFilter, sortBy, pageSize]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    if (subcategoryFilter && !availableSubcategories.includes(subcategoryFilter)) setSubcategoryFilter('');
+  }, [availableSubcategories, subcategoryFilter]);
 
   const formatPrice = (price: number) => new Intl.NumberFormat('sr-RS', {
     style: 'currency', currency: 'RSD', minimumFractionDigits: 2, maximumFractionDigits: 2,
-  }).format(price);
+  }).format(Number(price) || 0);
+
+  const clearCatalogFilters = () => {
+    setManufacturerFilter([]);
+    setManufacturerFilterResetKey((key) => key + 1);
+    setCategoryFilter('');
+    setSubcategoryFilter('');
+    setStatusFilter('all');
+  };
+
+  const handleManufacturerFilterChange = useCallback((filters: { manufacturers: string[] }) => {
+    setManufacturerFilter(filters.manufacturers);
+  }, []);
 
   const handleImageSelect = async (product: Product, imageIndex: number) => {
     if (previewMode || imageIndex === 0 || !product.images?.[imageIndex]) return;
@@ -95,7 +204,13 @@ export default function AdminPanel() {
     if (!deleteTarget || previewMode) return;
     try {
       await deleteDoc(doc(db, 'products', deleteTarget.productId));
-      await Promise.all(deleteTarget.images.map((image) => deleteObject(ref(storage, image))));
+      await Promise.all(deleteTarget.images.map(async (image) => {
+        try {
+          await deleteObject(ref(storage, image));
+        } catch (error) {
+          console.warn('Image could not be removed from storage:', error);
+        }
+      }));
       setProducts((current) => current.filter((product) => product.productId !== deleteTarget.productId));
     } catch (error) {
       console.error('Error deleting product:', error);
@@ -121,8 +236,8 @@ export default function AdminPanel() {
 
   return (
     <main className="admin-panel-container">
-      {!previewMode && newItemClicked && <AddItemModal onClose={() => { setNewItemClicked(false); fetchProducts(); }} onProductAdded={(product) => setProducts((current) => [product, ...current])} />}
-      {!previewMode && selectedProduct && <EditItemModal product={selectedProduct} onClose={() => { setSelectedProduct(null); fetchProducts(); }} />}
+      {!previewMode && newItemClicked && <ProductEditorModal onClose={() => setNewItemClicked(false)} onSaved={(product) => { setProducts((current) => [product, ...current]); setNewItemClicked(false); setCurrentPage(1); }} />}
+      {!previewMode && selectedProduct && <ProductEditorModal product={selectedProduct} onClose={() => setSelectedProduct(null)} onSaved={(product) => { setProducts((current) => current.map((item) => item.productId === product.productId ? product : item)); setSelectedProduct(null); }} />}
       <Dialog open={Boolean(deleteTarget)} onClose={() => setDeleteTarget(null)}>
         <DialogContent>Da li ste sigurni da želite da obrišete ovaj proizvod?</DialogContent>
         <DialogActions><Button onClick={() => setDeleteTarget(null)} color="inherit">Odustani</Button><Button onClick={handleDeleteConfirmed} color="error">Obriši</Button></DialogActions>
@@ -149,14 +264,27 @@ export default function AdminPanel() {
       </section>
 
       <div className="admin-workspace">
-        <aside className="admin-sidebar"><div className="admin-sidebar-heading"><strong>Prikaz kataloga</strong><span>{displayedProducts.length} rezultata</span></div><div className="admin-sort-filter-wrapper"><Sort onSortChange={setSortBy} /><Filter onFilterChange={(filters) => setManufacturerFilter(filters.manufacturers)} availableManufacturers={availableManufacturers} /></div></aside>
+        <aside className="admin-sidebar">
+          <div className="admin-sidebar-heading"><strong>Prikaz kataloga</strong><span>{filteredProducts.length} rezultata</span></div>
+          <div className="admin-sort-filter-wrapper">
+            <Sort onSortChange={setSortBy} />
+            <section className="admin-catalog-filters" aria-label="Filteri kategorija i statusa">
+              <div className="admin-filter-title"><span><FilterAltOutlinedIcon /> Dodatni filteri</span>{activeFilterCount > 0 && <strong>{activeFilterCount}</strong>}</div>
+              <label><span>Kategorija</span><select value={categoryFilter} onChange={(event) => { setCategoryFilter(event.target.value); setSubcategoryFilter(''); }}><option value="">Sve kategorije</option>{availableCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
+              <label><span>Podkategorija</span><select value={subcategoryFilter} onChange={(event) => setSubcategoryFilter(event.target.value)} disabled={!availableSubcategories.length}><option value="">Sve podkategorije</option>{availableSubcategories.map((subcategory) => <option key={subcategory} value={subcategory}>{subcategory}</option>)}</select></label>
+              <label><span>Status artikla</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as ProductStatus)}><option value="all">Svi artikli</option><option value="regular">Redovna cena</option><option value="discount">Na akciji</option><option value="missingImage">Bez fotografije</option></select></label>
+              <button className="admin-clear-filters" type="button" onClick={clearCatalogFilters} disabled={!activeFilterCount}><RestartAltIcon /> Poništi dodatne filtere</button>
+            </section>
+            <Filter onFilterChange={handleManufacturerFilterChange} availableManufacturers={availableManufacturers} resetKey={manufacturerFilterResetKey} />
+          </div>
+        </aside>
 
         <section className="admin-main-content">
-          {loading ? <div className="admin-loader"><ScaleLoader color="#287b35" /></div> : !displayedProducts.length ? <div className="admin-empty"><h2>Nema proizvoda za prikaz</h2><p>Promenite filter ili termin pretrage.</p></div> : (
-            <div className="table-container">
-              <table className="product-table">
+          {loading ? <div className="admin-loader"><ScaleLoader color="#287b35" /></div> : !filteredProducts.length ? <div className="admin-empty"><div><h2>Nema proizvoda za prikaz</h2><p>Promenite filter ili termin pretrage.</p>{activeFilterCount > 0 && <button type="button" onClick={clearCatalogFilters}>Poništi filtere</button>}</div></div> : (
+            <div className="admin-table-card">
+              <div className="table-container"><table className="product-table">
                 <thead><tr><th>Proizvod</th><th>Kategorija</th><th>Cena</th><th>Status</th><th>Fotografije</th><th><span className="sr-only">Akcije</span></th></tr></thead>
-                <tbody>{displayedProducts.map((product) => (
+                <tbody>{paginatedProducts.map((product) => (
                   <tr key={product.productId} className={previewMode ? '' : 'product-row'} onClick={() => !previewMode && setSelectedProduct(product)}>
                     <td><div className="admin-product-cell"><img src={product.images?.[0] || productPlaceholder} alt="" loading="lazy" decoding="async" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} /><div><strong>{product.name}</strong><span>{product.manufacturer || 'Bez proizvođača'}</span></div></div></td>
                     <td><strong className="admin-category">{product.category || '—'}</strong><span className="admin-subcategory">{product.subcategory || 'Bez podkategorije'}</span></td>
@@ -166,7 +294,16 @@ export default function AdminPanel() {
                     <td onClick={(event) => event.stopPropagation()}><button className="admin-delete-button" title={previewMode ? 'Pregled je samo za čitanje' : 'Obriši proizvod'} disabled={previewMode} onClick={() => setDeleteTarget({ productId: product.productId, images: product.images || [] })}><DeleteOutlineIcon /></button></td>
                   </tr>
                 ))}</tbody>
-              </table>
+              </table></div>
+              <nav className="admin-pagination" aria-label="Stranice kataloga">
+                <div className="admin-pagination-summary"><strong>{resultStart}–{resultEnd}</strong><span>od {filteredProducts.length} proizvoda</span></div>
+                <label className="admin-page-size"><span>Po strani</span><select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))}>{PAGE_SIZE_OPTIONS.map((size) => <option key={size} value={size}>{size}</option>)}</select></label>
+                <div className="admin-page-controls">
+                  <button type="button" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1} aria-label="Prethodna stranica"><NavigateBeforeIcon /></button>
+                  {paginationItems.map((item) => item.page ? <button type="button" key={item.key} className={item.page === currentPage ? 'active' : ''} onClick={() => setCurrentPage(item.page as number)} aria-current={item.page === currentPage ? 'page' : undefined}>{item.label}</button> : <span key={item.key}>{item.label}</span>)}
+                  <button type="button" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage === totalPages} aria-label="Sledeća stranica"><NavigateNextIcon /></button>
+                </div>
+              </nav>
             </div>
           )}
         </section>

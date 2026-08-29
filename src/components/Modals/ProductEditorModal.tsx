@@ -1,0 +1,242 @@
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
+import { deleteObject, getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
+import CloseIcon from '@mui/icons-material/Close';
+import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
+import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
+import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
+import { toast } from 'react-toastify';
+import { db, storage } from '../firebase';
+import { RootState } from '../Redux/store';
+import { catalogCategories, getSubcategories } from '../../data/catalogCategories';
+import './ProductEditorModal.css';
+
+type Product = {
+  productId: string;
+  name: string;
+  category: string;
+  subcategory: string;
+  manufacturer: string;
+  price: number;
+  images: string[];
+  description: string;
+  onDiscount?: boolean;
+  discountPrice?: number;
+};
+
+type PreviewItem = {
+  id: string;
+  url: string;
+  file?: File;
+  existing: boolean;
+};
+
+type ProductEditorModalProps = {
+  product?: Product;
+  onClose: () => void;
+  onSaved: (product: Product) => void;
+};
+
+const MAX_IMAGES = 5;
+
+const uploadImage = (file: File, onProgress: (progress: number) => void) => {
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
+  const imageRef = ref(storage, `images/${Date.now()}-${crypto.randomUUID()}-${safeName}`);
+  const uploadTask = uploadBytesResumable(imageRef, file);
+  return new Promise<string>((resolve, reject) => {
+    uploadTask.on(
+      'state_changed',
+      (snapshot) => onProgress((snapshot.bytesTransferred / snapshot.totalBytes) * 100),
+      reject,
+      async () => resolve(await getDownloadURL(uploadTask.snapshot.ref)),
+    );
+  });
+};
+
+export default function ProductEditorModal({ product, onClose, onSaved }: ProductEditorModalProps) {
+  const user = useSelector((state: RootState) => state.auth.user);
+  const editing = Boolean(product);
+  const [name, setName] = useState(product?.name ?? '');
+  const [category, setCategory] = useState(product?.category ?? '');
+  const [subcategory, setSubcategory] = useState(product?.subcategory ?? '');
+  const [manufacturer, setManufacturer] = useState(product?.manufacturer ?? '');
+  const [price, setPrice] = useState(product ? String(product.price) : '');
+  const [description, setDescription] = useState(product?.description ?? '');
+  const [onDiscount, setOnDiscount] = useState(product?.onDiscount ?? false);
+  const [discountPrice, setDiscountPrice] = useState(product?.discountPrice ? String(product.discountPrice) : '');
+  const [previews, setPreviews] = useState<PreviewItem[]>(() => (product?.images ?? []).map((url, index) => ({ id: `existing-${index}-${url}`, url, existing: true })));
+  const [removedImages, setRemovedImages] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const localObjectUrls = useRef<string[]>([]);
+  const subcategories = useMemo(() => getSubcategories(category), [category]);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !loading) onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [loading, onClose]);
+
+  useEffect(() => () => {
+    localObjectUrls.current.forEach((url) => URL.revokeObjectURL(url));
+  }, []);
+
+  const handleCategoryChange = (nextCategory: string) => {
+    setCategory(nextCategory);
+    if (!getSubcategories(nextCategory).includes(subcategory)) setSubcategory('');
+  };
+
+  const handleImagesChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(event.target.files ?? []).filter((file) => file.type.startsWith('image/'));
+    if (!selectedFiles.length) return;
+    if (previews.length + selectedFiles.length > MAX_IMAGES) {
+      toast.error(`Možete dodati najviše ${MAX_IMAGES} fotografija.`);
+      event.target.value = '';
+      return;
+    }
+    const newPreviews = selectedFiles.map((file) => ({ id: crypto.randomUUID(), url: URL.createObjectURL(file), file, existing: false }));
+    localObjectUrls.current.push(...newPreviews.map((preview) => preview.url));
+    setPreviews((current) => [...current, ...newPreviews]);
+    event.target.value = '';
+  };
+
+  const removeImage = (id: string) => {
+    const selected = previews.find((preview) => preview.id === id);
+    if (!selected) return;
+    if (selected.existing) setRemovedImages((current) => [...current, selected.url]);
+    else {
+      URL.revokeObjectURL(selected.url);
+      localObjectUrls.current = localObjectUrls.current.filter((url) => url !== selected.url);
+    }
+    setPreviews((current) => current.filter((preview) => preview.id !== id));
+  };
+
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    const regularPrice = Number(price);
+    const salePrice = Number(discountPrice);
+    if (!category || !subcategory) {
+      toast.error('Izaberite kategoriju i podkategoriju.');
+      return;
+    }
+    if (!Number.isFinite(regularPrice) || regularPrice <= 0) {
+      toast.error('Unesite ispravnu cenu proizvoda.');
+      return;
+    }
+    if (onDiscount && (!Number.isFinite(salePrice) || salePrice <= 0 || salePrice >= regularPrice)) {
+      toast.error('Akcijska cena mora biti veća od nule i niža od redovne cene.');
+      return;
+    }
+    if (!previews.length) {
+      toast.error('Dodajte najmanje jednu fotografiju proizvoda.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const existingImages = previews.filter((preview) => preview.existing).map((preview) => preview.url);
+      const filesToUpload = previews.filter((preview) => preview.file);
+      const uploadedImages: string[] = [];
+      for (let index = 0; index < filesToUpload.length; index += 1) {
+        const preview = filesToUpload[index];
+        if (!preview.file) continue;
+        const url = await uploadImage(preview.file, (fileProgress) => {
+          setUploadProgress(((index + fileProgress / 100) / filesToUpload.length) * 100);
+        });
+        uploadedImages.push(url);
+      }
+
+      const savedProductData = {
+        name: name.trim(),
+        category,
+        subcategory,
+        manufacturer: manufacturer.trim(),
+        price: regularPrice,
+        description: description.trim(),
+        images: [...existingImages, ...uploadedImages],
+        onDiscount,
+        discountPrice: onDiscount ? salePrice : null,
+      };
+
+      let savedProduct: Product;
+      if (product) {
+        await updateDoc(doc(db, 'products', product.productId), savedProductData);
+        savedProduct = { ...savedProductData, productId: product.productId, discountPrice: onDiscount ? salePrice : undefined };
+      } else {
+        const createdDocument = await addDoc(collection(db, 'products'), savedProductData);
+        savedProduct = { ...savedProductData, productId: createdDocument.id, discountPrice: onDiscount ? salePrice : undefined };
+      }
+
+      await Promise.all(removedImages.map(async (imageUrl) => {
+        try {
+          await deleteObject(ref(storage, imageUrl));
+        } catch (error) {
+          console.warn('Removed image is not stored in the active Firebase bucket:', error);
+        }
+      }));
+
+      toast.success(editing ? 'Proizvod je uspešno izmenjen.' : 'Proizvod je uspešno dodat.');
+      onSaved(savedProduct);
+    } catch (error) {
+      console.error('Error saving product:', error);
+      toast.error('Čuvanje proizvoda nije uspelo. Pokušajte ponovo.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!user?.isAdmin) return null;
+
+  return (
+    <div className="product-editor-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !loading) onClose(); }}>
+      <form className="product-editor" onSubmit={handleSubmit} aria-labelledby="product-editor-title">
+        <header className="product-editor__header">
+          <div><span>Katalog proizvoda</span><h2 id="product-editor-title">{editing ? 'Izmena proizvoda' : 'Novi proizvod'}</h2><p>{editing ? 'Ažurirajte podatke, cenu i fotografije odabranog artikla.' : 'Unesite podatke potrebne da se artikal prikaže u prodavnici.'}</p></div>
+          <button type="button" onClick={onClose} disabled={loading} aria-label="Zatvori"><CloseIcon /></button>
+        </header>
+
+        <div className="product-editor__body">
+          <section className="product-editor__section">
+            <div className="product-editor__section-heading"><strong>Osnovni podaci</strong><span>Naziv, klasifikacija i proizvođač</span></div>
+            <div className="product-editor__grid">
+              <label className="product-editor__field product-editor__field--wide"><span>Naziv proizvoda</span><input type="text" value={name} onChange={(event) => setName(event.target.value)} placeholder="Na primer: Verimark 10 ml" required autoFocus /></label>
+              <label className="product-editor__field"><span>Kategorija</span><select value={category} onChange={(event) => handleCategoryChange(event.target.value)} required><option value="">Izaberite kategoriju</option>{catalogCategories.map((item) => <option key={item.label} value={item.label}>{item.label}</option>)}</select></label>
+              <label className="product-editor__field"><span>Podkategorija</span><select value={subcategory} onChange={(event) => setSubcategory(event.target.value)} required disabled={!category}><option value="">Izaberite podkategoriju</option>{subcategories.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+              <label className="product-editor__field product-editor__field--wide"><span>Proizvođač</span><input type="text" value={manufacturer} onChange={(event) => setManufacturer(event.target.value)} placeholder="Naziv proizvođača ili brenda" required /></label>
+            </div>
+          </section>
+
+          <section className="product-editor__section">
+            <div className="product-editor__section-heading"><strong>Cena i ponuda</strong><span>Podesite redovnu ili akcijsku cenu</span></div>
+            <div className="product-editor__price-row">
+              <label className="product-editor__field"><span>Redovna cena (RSD)</span><input type="number" min="0.01" step="0.01" value={price} onChange={(event) => setPrice(event.target.value)} placeholder="0,00" required /></label>
+              <label className="product-editor__switch"><input type="checkbox" checked={onDiscount} onChange={(event) => setOnDiscount(event.target.checked)} /><span aria-hidden="true" /><div><strong>Artikal je na akciji</strong><small>Prikaži sniženu cenu u prodavnici</small></div></label>
+              {onDiscount && <label className="product-editor__field"><span>Akcijska cena (RSD)</span><input type="number" min="0.01" step="0.01" value={discountPrice} onChange={(event) => setDiscountPrice(event.target.value)} placeholder="0,00" required /></label>}
+            </div>
+          </section>
+
+          <section className="product-editor__section">
+            <div className="product-editor__section-heading"><strong>Opis proizvoda</strong><span>Jasan opis pomaže kupcu pri izboru</span></div>
+            <label className="product-editor__field"><span>Opis</span><textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={5} placeholder="Namena, način primene, pakovanje i druge korisne informacije…" /></label>
+          </section>
+
+          <section className="product-editor__section">
+            <div className="product-editor__section-heading product-editor__section-heading--inline"><div><strong>Fotografije</strong><span>Prva fotografija je glavna na kartici proizvoda</span></div><b>{previews.length}/{MAX_IMAGES}</b></div>
+            <label className="product-editor__upload"><CloudUploadOutlinedIcon /><strong>Dodajte fotografije proizvoda</strong><span>JPG, PNG ili WEBP · najviše {MAX_IMAGES} fotografija</span><input type="file" accept="image/*" multiple onChange={handleImagesChange} disabled={previews.length >= MAX_IMAGES || loading} /></label>
+            {previews.length > 0 ? <div className="product-editor__previews">{previews.map((preview, index) => <article key={preview.id}><img src={preview.url} alt={`Fotografija proizvoda ${index + 1}`} />{index === 0 && <span>Glavna</span>}<button type="button" onClick={() => removeImage(preview.id)} disabled={loading} aria-label={`Ukloni fotografiju ${index + 1}`}><CloseIcon /></button></article>)}</div> : <div className="product-editor__no-images"><ImageOutlinedIcon /><span>Još nema dodatih fotografija</span></div>}
+          </section>
+        </div>
+
+        <footer className="product-editor__footer"><span>{loading && uploadProgress > 0 ? `Otpremanje fotografija ${Math.round(uploadProgress)}%` : 'Proverite podatke pre čuvanja.'}</span><div><button type="button" className="product-editor__cancel" onClick={onClose} disabled={loading}>Odustani</button><button type="submit" className="product-editor__save" disabled={loading}><SaveOutlinedIcon />{loading ? 'Čuvanje…' : editing ? 'Sačuvaj izmene' : 'Dodaj proizvod'}</button></div></footer>
+      </form>
+    </div>
+  );
+}
