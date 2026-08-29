@@ -5,6 +5,20 @@
   background: rgba(255, 255, 255, 0.98);
 }
 
+.shop-header--search-active {
+  position: sticky;
+  top: 0;
+  box-shadow: 0 10px 34px rgba(23, 63, 39, 0.1);
+}
+
+.shop-header--search-active + .shop-navigation {
+  top: var(--shop-search-header-height, 142px);
+}
+
+.shop-header--search-active ~ .shop-route-stage [data-product-catalogue] {
+  scroll-margin-top: calc(var(--shop-search-header-height, 142px) + 76px);
+}
+
 .shop-header__shell {
   width: min(1180px, calc(100% - 40px));
   margin: 0 auto;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
@@ -19,6 +19,7 @@ import protectionIcon from "../../assets/zastita/insekticidi-Green.png";
 import nutritionIcon from "../../assets/ishrana/kristalna-Green.png";
 import seedIcon from "../../assets/seme/povrce-Green.png";
 import gardenIcon from "../../assets/garden/masine-Green.png";
+import { scrollToProductCatalogue } from "../scrollToProductCatalogue";
 import "./Home.css";
 
 type Product = {
@@ -27,6 +28,7 @@ type Product = {
   price: number;
   images: string[];
   category: string;
+  subcategory?: string;
   manufacturer: string;
   packaging?: string;
   description?: string;
@@ -68,6 +70,7 @@ export default function Home() {
   const heroImageRef = useRef<HTMLImageElement>(null);
   const [sortBy, setSortBy] = useState("nameAsc");
   const [manufacturerFilter, setManufacturerFilter] = useState<string[]>([]);
+  const [filterResetKey, setFilterResetKey] = useState(0);
   const searchQuery = useSelector((state: RootState) => state.search.query);
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -76,11 +79,7 @@ export default function Home() {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const productsQuery = query(
-          collection(db, "products"),
-          where("onDiscount", "==", true)
-        );
-        const querySnapshot = await getDocs(productsQuery);
+        const querySnapshot = await getDocs(collection(db, "products"));
         const fetchedProducts = querySnapshot.docs.map((document) => ({
           productId: document.id,
           ...document.data(),
@@ -101,19 +100,40 @@ export default function Home() {
     if (image?.complete && image.naturalWidth > 0) setHeroImageLoaded(true);
   }, []);
 
+  const isSearching = Boolean(searchQuery.trim());
+
+  useEffect(() => {
+    if (!isSearching) return;
+    setManufacturerFilter([]);
+    setFilterResetKey((key) => key + 1);
+    const timer = window.setTimeout(scrollToProductCatalogue, 180);
+    return () => window.clearTimeout(timer);
+  }, [isSearching]);
+
+  const searchedCatalogue = useMemo(
+    () => isSearching ? products : products.filter((product) => product.onDiscount),
+    [isSearching, products]
+  );
+
   const availableManufacturers = useMemo(
     () =>
       Array.from(
-        new Set(products.map((product) => product.manufacturer).filter(Boolean))
+        new Set(searchedCatalogue.map((product) => product.manufacturer).filter(Boolean))
       ),
-    [products]
+    [searchedCatalogue]
   );
 
   const sortedProducts = useMemo(() => {
-    const filteredProducts = products.filter((product) => {
-      const matchesSearch = product.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
+    const normalizedSearch = searchQuery.trim().toLocaleLowerCase("sr-Latn");
+    const filteredProducts = searchedCatalogue.filter((product) => {
+      const matchesSearch = !normalizedSearch || [
+        product.name,
+        product.manufacturer,
+        product.category,
+        product.subcategory,
+        product.packaging,
+        product.description,
+      ].some((value) => value?.toLocaleLowerCase("sr-Latn").includes(normalizedSearch));
       const matchesManufacturer =
         manufacturerFilter.length === 0 ||
         manufacturerFilter.includes(product.manufacturer);
@@ -137,7 +157,7 @@ export default function Home() {
           return first.name.localeCompare(second.name);
       }
     });
-  }, [products, searchQuery, manufacturerFilter, sortBy]);
+  }, [searchedCatalogue, searchQuery, manufacturerFilter, sortBy]);
 
   const handleAddToCart = (productId: string) => {
     const product = products.find((item) => item.productId === productId);
@@ -259,10 +279,10 @@ export default function Home() {
         <div className="shop-home__shell">
           <header className="shop-section-heading shop-section-heading--products">
             <div>
-              <span className="shop-eyebrow">Aktuelna ponuda</span>
-              <h2>Proizvodi na akciji</h2>
+              <span className="shop-eyebrow">{searchQuery.trim() ? "Globalna pretraga" : "Aktuelna ponuda"}</span>
+              <h2>{searchQuery.trim() ? `Rezultati za „${searchQuery.trim()}“` : "Proizvodi na akciji"}</h2>
             </div>
-            <p>Sezonski izbor proizvoda sa povoljnijim cenama.</p>
+            <p>{searchQuery.trim() ? `Pronađeno proizvoda: ${sortedProducts.length}` : "Sezonski izbor proizvoda sa povoljnijim cenama."}</p>
           </header>
 
           <div className="shop-products__layout">
@@ -271,6 +291,7 @@ export default function Home() {
               <Filter
                 onFilterChange={handleFilterChange}
                 availableManufacturers={availableManufacturers}
+                resetKey={filterResetKey}
               />
             </aside>
 

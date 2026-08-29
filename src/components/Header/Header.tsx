@@ -5,35 +5,69 @@ import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettin
 import ArrowOutwardIcon from "@mui/icons-material/ArrowOutward";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../Redux/store";
 import { setSearchQuery } from "../Redux/searchSlice";
 import PlantCentarLogo from "../../assets/plant-centar-logo-horizontalni.svg";
+import { scrollToProductCatalogue } from "../scrollToProductCatalogue";
 
 export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+  const headerRef = useRef<HTMLElement>(null);
+  const searchScrollTimerRef = useRef<number | null>(null);
+  const [searchActive, setSearchActive] = useState(false);
   const user = useSelector((state: RootState) => state.auth.user);
   const cartItems = useSelector((state: RootState) => state.cart.items);
+  const searchQuery = useSelector((state: RootState) => state.search.query);
   const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0);
+
+  useEffect(() => () => {
+    if (searchScrollTimerRef.current) window.clearTimeout(searchScrollTimerRef.current);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!searchActive || !headerRef.current) return;
+    const updateHeaderHeight = () => {
+      document.documentElement.style.setProperty("--shop-search-header-height", `${headerRef.current?.offsetHeight ?? 0}px`);
+    };
+    updateHeaderHeight();
+    const observer = new ResizeObserver(updateHeaderHeight);
+    observer.observe(headerRef.current);
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty("--shop-search-header-height");
+    };
+  }, [searchActive]);
+
+  const scheduleCatalogueFocus = (delay = 220) => {
+    if (searchScrollTimerRef.current) window.clearTimeout(searchScrollTimerRef.current);
+    searchScrollTimerRef.current = window.setTimeout(scrollToProductCatalogue, delay);
+  };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     dispatch(setSearchQuery(event.target.value));
+    scheduleCatalogueFocus();
   };
 
   const handleSearchFocus = () => {
-    const catalogue = document.querySelector<HTMLElement>("[data-product-catalogue]");
-    if (catalogue) {
-      catalogue.scrollIntoView({ behavior: "smooth", block: "start" });
-      return;
+    setSearchActive(true);
+    if (decodeURIComponent(location.pathname) !== "/početna") {
+      navigate("/početna#akcija");
     }
 
-    if (location.pathname !== "/početna") navigate("/početna#akcija");
+    scheduleCatalogueFocus(180);
+  };
+
+  const handleSearchBlur = () => {
+    if (searchScrollTimerRef.current) window.clearTimeout(searchScrollTimerRef.current);
+    setSearchActive(false);
   };
 
   return (
-    <header className="shop-header">
+    <header ref={headerRef} className={`shop-header ${searchActive ? "shop-header--search-active" : ""}`}>
       <div className="shop-header__utility">
         <div className="shop-header__shell shop-header__utility-inner">
           <span className="shop-header__delivery">
@@ -64,7 +98,9 @@ export default function Header() {
             <input
               type="search"
               placeholder="Pretražite proizvode, brendove i namenu..."
+              value={searchQuery}
               onFocus={handleSearchFocus}
+              onBlur={handleSearchBlur}
               onChange={handleSearchChange}
             />
             <SearchOutlinedIcon className="shop-search__icon" aria-hidden="true" />
