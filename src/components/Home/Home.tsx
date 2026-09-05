@@ -1,3 +1,4 @@
+import { type ProductOptions } from '../../data/productOptions';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { useDispatch, useSelector } from "react-redux";
@@ -22,7 +23,7 @@ import gardenIcon from "../../assets/garden/masine-Green.png";
 import { scrollToProductCatalogue } from "../scrollToProductCatalogue";
 import "./Home.css";
 
-type Product = {
+type Product = ProductOptions & {
   productId: string;
   name: string;
   price: number;
@@ -84,7 +85,7 @@ export default function Home() {
           productId: document.id,
           ...document.data(),
         })) as Product[];
-        setProducts(fetchedProducts);
+        setProducts(fetchedProducts.filter((product) => !product.archived));
       } catch (error) {
         console.error("Error fetching products: ", error);
       } finally {
@@ -161,12 +162,13 @@ export default function Home() {
 
   const handleAddToCart = (productId: string) => {
     const product = products.find((item) => item.productId === productId);
-    if (!product) return;
+    if (!product || product.archived || product.availability === 'out_of_stock') return;
+        if (product.packages?.length) { navigate(`/proizvod/${productId}`); return; }
 
     dispatch(
       addToCart({
         productId: product.productId,
-        name: product.name,
+        name: product.name + (product.packaging ? ` · ${product.packaging}` : ""),
         image: product.images?.[0] || "",
         price:
           product.onDiscount && product.discountPrice
@@ -191,10 +193,10 @@ export default function Home() {
         <div className="shop-home__shell shop-hero__grid">
           <div className="shop-hero__content">
             <span className="shop-eyebrow">Znanje. Posvećenost. Uspeh.</span>
-            <h1>Sve što vašoj proizvodnji treba, na jednom mestu.</h1>
+            <h1>Od setve do berbe. Sve za vaš uspeh.</h1>
             <p>
-              Proveren asortiman, stručna podrška i proizvodi iza kojih stoji
-              Plant Centar iskustvo.
+              Zaštita i ishrana bilja, seme, sadnice i oprema za baštu.
+              Izaberite proizvode i pakovanje koje vam odgovara.
             </p>
             <div className="shop-hero__actions">
               <a className="shop-button shop-button--primary" href="#akcija">
@@ -219,6 +221,7 @@ export default function Home() {
               fetchPriority="high"
               onLoad={() => setHeroImageLoaded(true)}
             />
+            <div className="hero-offer-grid">{featuredCategories.map((category) => <button key={category.label} onClick={() => navigate(`/kategorija/${category.label === 'Garden program' ? 'Garden oprema i alati' : category.label}`)}><img src={category.icon} alt="" /><strong>{category.label}</strong><span>Istražite ponudu ↗</span></button>)}</div>
             <figcaption>
               <span>Plant Centar preporuka</span>
               <strong>Pravi proizvod u pravo vreme</strong>
@@ -259,7 +262,7 @@ export default function Home() {
                 key={category.label}
                 className="shop-category-card"
                 type="button"
-                onClick={() => navigate(category.route)}
+                onClick={() => navigate(`/kategorija/${category.label === 'Garden program' ? 'Garden oprema i alati' : category.label}`)}
               >
                 <span className="shop-category-card__icon">
                   <img src={category.icon} alt="" loading="lazy" decoding="async" />

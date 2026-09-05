@@ -1,9 +1,11 @@
+import { cartKey } from '../../data/productOptions';
 // Redux/cartSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 /** Updated CartItem interface to include quantity. */
 interface CartItem {
   productId: string;
+  packageId?: string;
   name: string;
   image: string;
   price: number;
@@ -34,7 +36,7 @@ const cartSlice = createSlice({
      */
     addToCart(state, action: PayloadAction<CartItem>) {
       const existingItem = state.items.find(
-        (item) => item.productId === action.payload.productId
+        (item) => cartKey(item) === cartKey(action.payload)
       );
 
       if (existingItem) {
@@ -52,24 +54,24 @@ const cartSlice = createSlice({
      */
     removeFromCart(state, action: PayloadAction<string>) {
       state.items = state.items.filter(
-        (item) => item.productId !== action.payload
+        (item) => cartKey(item) !== action.payload
       );
       saveCartToLocalStorage(state.items);
     },
 
     increaseQuantity(state, action: PayloadAction<string>) {
-      const item = state.items.find((cartItem) => cartItem.productId === action.payload);
+      const item = state.items.find((cartItem) => cartKey(cartItem) === action.payload);
       if (item) item.quantity += 1;
       saveCartToLocalStorage(state.items);
     },
 
     decreaseQuantity(state, action: PayloadAction<string>) {
-      const item = state.items.find((cartItem) => cartItem.productId === action.payload);
+      const item = state.items.find((cartItem) => cartKey(cartItem) === action.payload);
       if (!item) return;
       if (item.quantity > 1) {
         item.quantity -= 1;
       } else {
-        state.items = state.items.filter((cartItem) => cartItem.productId !== action.payload);
+        state.items = state.items.filter((cartItem) => cartKey(cartItem) !== action.payload);
       }
       saveCartToLocalStorage(state.items);
     },

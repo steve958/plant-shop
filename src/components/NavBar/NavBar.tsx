@@ -1,3 +1,4 @@
+import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 /* NavBar.tsx */
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -149,7 +150,7 @@ export default function NavBar() {
                 if (item.subItems.length === 0) handleNavigate(item.route);
               }}
             >
-              <h3>{item.label}</h3>
+              <button className="nav-category-label" onClick={() => handleNavigate(item.subItems.length ? `/kategorija/${item.label}` : item.route)}>{item.label === "Akcija" && <LocalOfferOutlinedIcon />}{item.label}</button>
               {item.subItems.length > 0 && (
                 <div className={`dropdown-menu ${activeDropdown === item.label ? "open" : ""}`}>
                   {item.subItems.map((subItem) => (
@@ -197,13 +198,13 @@ export default function NavBar() {
           {navItems.map((item) => (
             <div key={item.label} className="mobile-nav-item">
               <div className="mobile-nav-item-header">
-                <h3
+                <button className="nav-category-label"
                   onClick={() => {
-                    if (item.subItems.length === 0) handleNavigate(item.route);
+                    if (item.subItems.length === 0) handleNavigate(item.route); else toggleMobileDropdown(item.label);
                   }}
                 >
-                  {item.label}
-                </h3>
+                  {item.label === "Akcija" ? <LocalOfferOutlinedIcon /> : <img className="sub-item-icon" src={item.subItems[0]?.subItemIcon} alt="" />}{item.label}
+                </button>
                 {item.subItems.length > 0 && (
                   <button
                     className="mobile-dropdown-toggle"
@@ -211,14 +212,16 @@ export default function NavBar() {
                       e.stopPropagation();
                       toggleMobileDropdown(item.label);
                     }}
-                    aria-label="Toggle submenu"
+                    aria-label={`Podkategorije: ${item.label}`}
+                    aria-expanded={activeMobileDropdown === item.label}
                   >
                     {activeMobileDropdown === item.label ? "−" : "+"}
                   </button>
                 )}
               </div>
               {item.subItems.length > 0 && (
-                <div className={`mobile-dropdown ${activeMobileDropdown === item.label ? 'open' : ''}`}>
+                <div className={`mobile-dropdown ${activeMobileDropdown === item.label ? 'open' : ''}`} hidden={activeMobileDropdown !== item.label}>
+                  <button className="mobile-dropdown-item" onClick={() => handleNavigate(`/kategorija/${item.label}`)}>Pogledaj sve — {item.label}</button>
                   {item.subItems.map((subItem) => (
                     <div
                       key={subItem.label}

@@ -1,3 +1,4 @@
+import { type ProductOptions, availabilityLabels } from '../../data/productOptions';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
@@ -13,7 +14,7 @@ import productPlaceholder from '../../assets/product-placeholder.svg';
 import Loader from '../Loader/Loader';
 import './ItemDetails.css';
 
-type Product = {
+type Product = ProductOptions & {
   productId: string;
   name: string;
   price: number;
@@ -32,20 +33,24 @@ export default function ItemDetails() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [packageId, setPackageId] = useState('');
   const [quantity, setQuantity] = useState(1);
   const dispatch = useDispatch();
 
   useEffect(() => {
     const fetchProductDetails = async () => {
       setLoading(true);
+      setProduct(null); setQuantity(1); setPackageId('');
       try {
         if (!productId) throw new Error('Product ID is undefined');
         const productSnapshot = await getDoc(doc(db, 'products', productId));
         if (!productSnapshot.exists()) return;
         const data = productSnapshot.data();
+        if (data.archived) return;
         const productImages = Array.isArray(data.images) ? data.images.filter(Boolean) : [];
         setProduct({
           productId: productSnapshot.id,
+          packages: data.packages || [], availability: data.availability || 'on_order',
           name: data.name || 'Proizvod',
           price: Number(data.price) || 0,
           images: productImages,
@@ -58,6 +63,7 @@ export default function ItemDetails() {
           discountPrice: typeof data.discountPrice === 'number' ? data.discountPrice : null,
         });
         setSelectedImage(productImages[0] || null);
+        setPackageId(data.packages?.[0]?.id || '');
       } catch (error) {
         console.error('Error fetching product details:', error);
       } finally {
@@ -71,12 +77,16 @@ export default function ItemDetails() {
     style: 'currency', currency: 'RSD', minimumFractionDigits: 2, maximumFractionDigits: 2,
   }).format(price);
 
+  const selectedPackage = product?.packages?.find((option) => option.id === packageId);
+  const availability = selectedPackage?.availability || product?.availability || 'on_order';
+  const sellingPrice = selectedPackage?.price ?? (product?.onDiscount && product.discountPrice ? product.discountPrice : product?.price || 0);
   const handleAddToCart = () => {
-    if (!product) return;
-    const sellingPrice = product.onDiscount && product.discountPrice ? product.discountPrice : product.price;
+    if (!product || availability === 'out_of_stock') return;
+
     dispatch(addToCart({
       productId: product.productId,
-      name: product.name,
+      packageId: selectedPackage?.id || '',
+      name: product.name + ((selectedPackage?.label || product.packaging) ? ` · ${selectedPackage?.label || product.packaging}` : ''),
       price: sellingPrice,
       image: product.images[0] || selectedImage || '',
       quantity,
@@ -110,20 +120,21 @@ export default function ItemDetails() {
             <section className="product-details">
               <div className="product-meta-row">
                 {product.manufacturer && <span>{product.manufacturer}</span>}
-                {product.onDiscount && product.discountPrice ? <strong>Akcijska cena</strong> : <span>Dostupno za poručivanje</span>}
+                <span role="status">{availabilityLabels[availability]}</span>
               </div>
               <h1 className="product-title">{product.name}</h1>
+              {!!product.packages?.length && <label className="package-selector">Pakovanje<select value={packageId} onChange={(event) => { setPackageId(event.target.value); setQuantity(1); }}>{product.packages.map((option) => <option key={option.id} value={option.id}>{option.label} — {formatPrice(option.price)} · {availabilityLabels[option.availability]}</option>)}</select></label>}
               <div className="product-price-block">
-                <p className="product-price">{formatPrice(product.onDiscount && product.discountPrice ? product.discountPrice : product.price)}</p>
-                {product.onDiscount && product.discountPrice ? <><del>{formatPrice(product.price)}</del><span>Ušteda {formatPrice(product.price - product.discountPrice)}</span></> : null}
+                <p className="product-price">{formatPrice(sellingPrice)}</p>
+                {!selectedPackage && product.onDiscount && product.discountPrice ? <><del>{formatPrice(product.price)}</del><span>Ušteda {formatPrice(product.price - product.discountPrice)}</span></> : null}
               </div>
               <dl className="product-facts">
                 {product.category && <div><dt>Kategorija</dt><dd>{product.category}</dd></div>}
                 {product.subcategory && <div><dt>Namena</dt><dd>{product.subcategory}</dd></div>}
                 {product.manufacturer && <div><dt>Proizvođač</dt><dd>{product.manufacturer}</dd></div>}
-                {product.packaging && <div><dt>Pakovanje</dt><dd>{product.packaging}</dd></div>}
+                {!selectedPackage && product.packaging && <div><dt>Pakovanje</dt><dd>{product.packaging}</dd></div>}
               </dl>
-              {product.description ? <div className="product-description"><h2>Opis proizvoda</h2><p>{product.description}</p></div> : <div className="product-description product-description--empty"><h2>Informacije o proizvodu</h2><p>Za dodatne informacije o primeni i dostupnosti kontaktirajte naš stručni tim.</p></div>}
+
               <div className="quantity-actions">
                 <label htmlFor="product-quantity">Količina</label>
                 <div className="quantity-input-wrapper">
@@ -132,7 +143,7 @@ export default function ItemDetails() {
                   <button type="button" className="qty-btn" onClick={() => setQuantity(quantity + 1)} aria-label="Povećaj količinu">+</button>
                 </div>
               </div>
-              <button className="add-to-cart-button" onClick={handleAddToCart}><ShoppingBagOutlinedIcon /> Dodaj u korpu</button>
+              <button disabled={availability === 'out_of_stock'} className="add-to-cart-button" onClick={handleAddToCart}><ShoppingBagOutlinedIcon /> Dodaj u korpu</button>
               <div className="product-service-notes">
                 <span><VerifiedOutlinedIcon />Proverena ponuda</span>
                 <span><SupportAgentOutlinedIcon />Stručna podrška</span>
@@ -140,6 +151,7 @@ export default function ItemDetails() {
               </div>
             </section>
           </div>
+              {product.description ? <div className="product-description"><h2>Opis proizvoda</h2><p>{product.description}</p></div> : <div className="product-description product-description--empty"><h2>Informacije o proizvodu</h2><p>Za dodatne informacije o primeni i dostupnosti kontaktirajte naš stručni tim.</p></div>}
         </div>
       ) : <div className="product-not-found"><h1>Proizvod nije pronađen</h1><Link to="/početna">Nazad na ponudu</Link></div>}
     </main>

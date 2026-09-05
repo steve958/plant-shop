@@ -16,6 +16,7 @@ export const router = createBrowserRouter([
     path: "/",
     element: <App />,
     children: [
+      { path: "/kategorija/:category", element: <SubCategoryPage /> },
       {
         index: true,
         element: <Navigate to="/početna" replace />,

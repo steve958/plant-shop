@@ -1,3 +1,4 @@
+import { type ProductOptions } from '../../data/productOptions';
 import "./SubCategoryStyle.css";
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { db } from "../firebase";
@@ -14,7 +15,7 @@ import ProductCard from "../ProductCard/ProductCard";
 import Loader from "../Loader/Loader";
 import { toast } from "react-toastify";
 
-type Product = {
+type Product = ProductOptions & {
     productId: string;
     name: string;
     price: number;
@@ -43,7 +44,7 @@ export default function SubCategoryPage() {
     // React Router
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const { subCategory } = useParams<{ subCategory: string }>();
+    const { subCategory, category } = useParams<{ subCategory: string; category: string }>();
 
     // Global search from Redux
     const searchQuery = useSelector((state: RootState) => state.search.query);
@@ -51,12 +52,13 @@ export default function SubCategoryPage() {
     // 1) Fetch products by subcategory on mount or when subCategory changes
     useEffect(() => {
         const fetchProducts = async () => {
-            if (!subCategory) return;
+            if (!subCategory && !category) return;
+            setManufacturerFilter([]);
             setLoading(true);
             try {
                 const q = query(
                     collection(db, "products"),
-                    where("subcategory", "==", subCategory)
+                    where(category ? "category" : "subcategory", "==", category || subCategory)
                 );
                 const querySnapshot = await getDocs(q);
                 const fetchedProducts: Product[] = querySnapshot.docs.map((doc) => ({
@@ -64,7 +66,7 @@ export default function SubCategoryPage() {
                     ...doc.data(),
                 })) as Product[];
 
-                setProducts(fetchedProducts);
+                setProducts(fetchedProducts.filter((product) => !product.archived));
             } catch (error) {
                 console.error("Error fetching products for subcategory:", error);
             } finally {
@@ -73,7 +75,7 @@ export default function SubCategoryPage() {
         };
 
         fetchProducts();
-    }, [subCategory]);
+    }, [subCategory, category]);
 
     // 2) Compute unique manufacturers from the fetched products
     const availableManufacturers = useMemo(() => {
@@ -135,11 +137,12 @@ export default function SubCategoryPage() {
 
     const handleAddToCart = (productId: string) => {
         const product = products.find((item) => item.productId === productId);
-        if (!product) return;
+        if (!product || product.archived || product.availability === 'out_of_stock') return;
+        if (product.packages?.length) { navigate(`/proizvod/${productId}`); return; }
 
         dispatch(addToCart({
             productId: product.productId,
-            name: product.name,
+            name: product.name + (product.packaging ? ` · ${product.packaging}` : ""),
             image: product.images?.[0] || "",
             price: product.onDiscount && product.discountPrice
                 ? product.discountPrice
@@ -154,7 +157,7 @@ export default function SubCategoryPage() {
         <div className="sub-category-page-container" data-product-catalogue>
             <div className="sub-category-heading">
                 <span>Plant Centar asortiman</span>
-                <h1>{subCategory}</h1>
+                <h1>{category || subCategory}</h1>
                 <p>Provereni proizvodi uz stručnu podršku pri izboru i primeni.</p>
             </div>
             {loading ? (

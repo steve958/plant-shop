@@ -1,9 +1,10 @@
+import { cartKey } from '../../data/productOptions';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import { db } from '../firebase';
 import { RootState } from '../Redux/store';
@@ -49,6 +50,17 @@ const Order = () => {
     setSubmitting(true);
     const orderNumber = `PC-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${Date.now().toString().slice(-4)}`;
     try {
+      for (const item of items) {
+        const snapshot = await getDoc(doc(db, 'products', item.productId));
+        const product = snapshot.data();
+        const packageId = 'packageId' in item ? item.packageId : '';
+        const selected = packageId ? product?.packages?.find((option: { id: string }) => option.id === packageId) : null;
+        const currentPrice = selected?.price ?? (product?.onDiscount && product.discountPrice ? product.discountPrice : product?.price);
+        if (!product || product.archived || (packageId && !selected) || (!packageId && product.packages?.length) || (selected?.availability || product.availability) === 'out_of_stock' || currentPrice !== item.price) {
+          toast.error(`Ponuda za „${item.name}“ je promenjena. Uklonite stavku iz korpe i ponovo izaberite artikal i pakovanje.`);
+          setSubmitting(false); return;
+        }
+      }
       await addDoc(collection(db, 'orders'), {
         orderNumber,
         customer: {
@@ -57,7 +69,7 @@ const Order = () => {
           street: data.street.trim(), number: data.number.trim(),
         },
         items: items.map((item) => ({
-          productId: item.productId, name: item.name, image: item.image || '',
+          packageId: ('packageId' in item ? item.packageId : '') || '', productId: item.productId, name: item.name, image: item.image || '',
           price: item.price, quantity: item.quantity, lineTotal: item.price * item.quantity,
         })),
         totals: { subtotal, delivery, total },
@@ -109,7 +121,7 @@ const Order = () => {
 
           <section className="order-review">
             <div className="order-section-heading"><span>03</span><div><h2>Proizvodi</h2><p>{items.length} {items.length === 1 ? 'stavka' : 'stavke'} u porudžbini</p></div></div>
-            <div className="order-items">{items.map((item) => <article key={item.productId} className="order-item"><img src={item.image || productPlaceholder} alt={item.name} loading="lazy" decoding="async" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} /><div><h3>{item.name}</h3><p>Količina: {item.quantity}</p></div><strong>{formatPrice(item.price * item.quantity)}</strong></article>)}</div>
+            <div className="order-items">{items.map((item) => <article key={cartKey(item)} className="order-item"><img src={item.image || productPlaceholder} alt={item.name} loading="lazy" decoding="async" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} /><div><h3>{item.name}</h3><p>Količina: {item.quantity}</p></div><strong>{formatPrice(item.price * item.quantity)}</strong></article>)}</div>
           </section>
         </div>
 

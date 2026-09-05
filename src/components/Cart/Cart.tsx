@@ -1,3 +1,4 @@
+import { cartKey } from '../../data/productOptions';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '../Redux/store';
@@ -47,7 +48,7 @@ export default function Cart() {
       <div className="cart-layout">
         <section className="cart-items-wrapper" aria-label="Proizvodi u korpi">
           {cartItems.map((item) => (
-            <article key={item.productId} className="cart-item">
+            <article key={cartKey(item)} className="cart-item">
               <div className="cart-image-wrap"><img src={item.image || productPlaceholder} alt={item.name} loading="lazy" decoding="async" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} /></div>
               <div className="cart-item-details">
                 <span className="cart-item-label">Proizvod</span>
@@ -55,11 +56,11 @@ export default function Cart() {
                 <p className="cart-unit-price">{formatPrice(item.price)} / kom</p>
                 <div className="cart-item-actions">
                   <div className="cart-quantity" aria-label={`Količina za ${item.name}`}>
-                    <button aria-label="Smanji količinu" onClick={() => dispatch(decreaseQuantity(item.productId))}>−</button>
+                    <button aria-label="Smanji količinu" onClick={() => dispatch(decreaseQuantity(cartKey(item)))}>−</button>
                     <span aria-live="polite">{item.quantity}</span>
-                    <button aria-label="Povećaj količinu" onClick={() => dispatch(increaseQuantity(item.productId))}>+</button>
+                    <button aria-label="Povećaj količinu" onClick={() => dispatch(increaseQuantity(cartKey(item)))}>+</button>
                   </div>
-                  <button className="cart-remove" onClick={() => dispatch(removeFromCart(item.productId))}><DeleteOutlineIcon fontSize="small" /> Ukloni</button>
+                  <button className="cart-remove" onClick={() => dispatch(removeFromCart(cartKey(item)))}><DeleteOutlineIcon fontSize="small" /> Ukloni</button>
                 </div>
               </div>
               <strong className="cart-line-price">{formatPrice(item.price * item.quantity)}</strong>

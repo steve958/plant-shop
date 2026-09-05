@@ -1,10 +1,11 @@
+import { type ProductOptions, availabilityLabels } from '../../data/productOptions';
 import { useLayoutEffect, useRef, useState } from "react";
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import productPlaceholder from "../../assets/product-placeholder.svg";
 import "./ProductCard.css";
 
-type Product = {
+type Product = ProductOptions & {
   productId: string;
   name: string;
   price: number;
@@ -43,11 +44,11 @@ export default function ProductCard({
   }, [imageSource]);
 
   const hasDiscount = Boolean(
-    product.onDiscount &&
+    !product.packages?.length && product.onDiscount &&
       product.discountPrice &&
       product.discountPrice < product.price
   );
-  const currentPrice = hasDiscount ? product.discountPrice! : product.price;
+  const currentPrice = product.packages?.length ? Math.min(...product.packages.map((option) => option.price)) : hasDiscount ? product.discountPrice! : product.price;
   const discountPercent = hasDiscount
     ? Math.round(((product.price - currentPrice) / product.price) * 100)
     : 0;
@@ -91,6 +92,7 @@ export default function ProductCard({
           </span>
           {product.packaging && <span className="catalog-card__packaging">{product.packaging}</span>}
         </div>
+        <small>{product.packages?.length ? `${product.packages.length} pakovanja · Izaberite pakovanje` : availabilityLabels[product.availability || 'on_order']}</small>
         <h3>
           <button type="button" onClick={() => onClick(product.productId)}>
             {product.name}
@@ -104,13 +106,13 @@ export default function ProductCard({
         <div className="catalog-card__footer">
           <div className="catalog-card__price">
             {hasDiscount && <del>{formatPrice(product.price)} RSD</del>}
-            <strong>{formatPrice(currentPrice)} RSD</strong>
+            <strong>{product.packages?.length ? "Od " : ""}{formatPrice(currentPrice)} RSD</strong>
           </div>
           <button
             className="catalog-card__cart"
             type="button"
-            onClick={() => onAddToCart?.(product.productId)}
-            disabled={!onAddToCart}
+            onClick={() => product.packages?.length ? onClick(product.productId) : onAddToCart?.(product.productId)}
+            disabled={!onAddToCart || (!product.packages?.length && product.availability === 'out_of_stock')}
             aria-label={`Dodaj ${product.name} u korpu`}
           >
             <ShoppingBagOutlinedIcon aria-hidden="true" />

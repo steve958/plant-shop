@@ -1,0 +1,35 @@
+const ts = require('typescript');
+const fs = require('node:fs');
+const assert = require('node:assert/strict');
+const vm = require('node:vm');
+const storage = new Map();
+function load(path, customRequire = require) {
+  const output = ts.transpileModule(fs.readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+  const exports = {};
+  vm.runInNewContext(output, { exports, require: customRequire, localStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value) } });
+  return exports;
+}
+const options = load('src/data/productOptions.ts');
+const cart = load('src/components/Redux/cartSlice.ts', name => name.includes('productOptions') ? options : require(name));
+const small = { productId: 'plant', packageId: 'small', name: 'Plant · 100 ml', price: 200, quantity: 1, image: '' };
+const large = { ...small, packageId: 'large', price: 500 };
+let state = cart.default(undefined, cart.addToCart(small));
+state = cart.default(state, cart.addToCart(large));
+state = cart.default(state, cart.addToCart(small));
+assert.equal(state.items.length, 2);
+assert.equal(state.items[0].quantity, 2);
+state = cart.default(state, cart.increaseQuantity(options.cartKey(large)));
+assert.equal(state.items[1].quantity, 2);
+state = cart.default(state, cart.removeFromCart(options.cartKey(small)));
+assert.equal(state.items.length, 1);
+assert.equal(state.items[0].packageId, 'large');
+state = cart.default(state, cart.decreaseQuantity(options.cartKey(large)));
+assert.equal(state.items[0].quantity, 1);
+state = cart.default(state, cart.decreaseQuantity(options.cartKey(large)));
+assert.equal(state.items.length, 0);
+const legacy = { ...small, packageId: undefined };
+state = cart.default(state, cart.addToCart(legacy));
+state = cart.default(state, cart.removeFromCart(options.cartKey(legacy)));
+assert.equal(state.items.length, 0);
+assert.equal(JSON.parse(storage.get('cartItems')).length, 0);
+console.log('Cart checks passed: package separation, merge, quantities, removal, legacy items, persistence.');

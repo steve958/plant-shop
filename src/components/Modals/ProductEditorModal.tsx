@@ -1,3 +1,4 @@
+import { type Availability, type PackageOption, type ProductOptions, availabilityLabels } from '../../data/productOptions';
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
@@ -12,7 +13,7 @@ import { RootState } from '../Redux/store';
 import { catalogCategories, getSubcategories } from '../../data/catalogCategories';
 import './ProductEditorModal.css';
 
-type Product = {
+type Product = ProductOptions & {
   productId: string;
   name: string;
   category: string;
@@ -66,6 +67,9 @@ export default function ProductEditorModal({ product, duplicate = false, protect
   const user = useSelector((state: RootState) => state.auth.user);
   const editing = Boolean(product) && !duplicate;
   const duplicating = Boolean(product) && duplicate;
+  const [archived, setArchived] = useState(duplicate ? false : product?.archived || false);
+  const [availability, setAvailability] = useState<Availability>(product?.availability || 'on_order');
+  const [packages, setPackages] = useState<PackageOption[]>(product?.packages || []);
   const [name, setName] = useState(product?.name ?? '');
   const [category, setCategory] = useState(product?.category ?? '');
   const [subcategory, setSubcategory] = useState(product?.subcategory ?? '');
@@ -131,7 +135,7 @@ export default function ProductEditorModal({ product, duplicate = false, protect
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    const regularPrice = normalizePrice(price);
+    const regularPrice = packages.length ? Math.min(...packages.map((option) => option.price)) : normalizePrice(price);
     const salePrice = normalizePrice(discountPrice);
     if (!category || !subcategory) {
       toast.error('Izaberite kategoriju i podkategoriju.');
@@ -145,7 +149,7 @@ export default function ProductEditorModal({ product, duplicate = false, protect
       toast.error('Unesite ispravnu cenu proizvoda.');
       return;
     }
-    if (onDiscount && (!Number.isFinite(salePrice) || salePrice <= 0 || salePrice >= regularPrice)) {
+    if (!packages.length && onDiscount && (!Number.isFinite(salePrice) || salePrice <= 0 || salePrice >= regularPrice)) {
       toast.error('Akcijska cena mora biti veća od nule i niža od redovne cene.');
       return;
     }
@@ -154,6 +158,9 @@ export default function ProductEditorModal({ product, duplicate = false, protect
       return;
     }
 
+    if (packages.some((option) => !option.label.trim() || !Number.isFinite(option.price) || option.price <= 0) || new Set(packages.map((option) => option.label.trim().toLowerCase())).size !== packages.length) {
+      toast.error('Svako pakovanje mora imati jedinstven naziv i cenu veću od nule.'); return;
+    }
     setLoading(true);
     try {
       const existingImages = previews.filter((preview) => preview.existing).map((preview) => preview.url);
@@ -169,6 +176,7 @@ export default function ProductEditorModal({ product, duplicate = false, protect
       }
 
       const savedProductData = {
+        archived, availability, packages: packages.map((option) => ({ ...option, label: option.label.trim() })),
         name: name.trim(),
         category,
         subcategory,
@@ -177,17 +185,17 @@ export default function ProductEditorModal({ product, duplicate = false, protect
         price: regularPrice,
         description: description.trim(),
         images: [...existingImages, ...uploadedImages],
-        onDiscount,
-        discountPrice: onDiscount ? salePrice : null,
+        onDiscount: !packages.length && onDiscount,
+        discountPrice: !packages.length && onDiscount ? salePrice : null,
       };
 
       let savedProduct: Product;
       if (editing && product) {
         await updateDoc(doc(db, 'products', product.productId), savedProductData);
-        savedProduct = { ...savedProductData, productId: product.productId, discountPrice: onDiscount ? salePrice : undefined };
+        savedProduct = { ...savedProductData, productId: product.productId, discountPrice: !packages.length && onDiscount ? salePrice : undefined };
       } else {
         const createdDocument = await addDoc(collection(db, 'products'), savedProductData);
-        savedProduct = { ...savedProductData, productId: createdDocument.id, discountPrice: onDiscount ? salePrice : undefined };
+        savedProduct = { ...savedProductData, productId: createdDocument.id, discountPrice: !packages.length && onDiscount ? salePrice : undefined };
       }
 
       await Promise.all(removedImages.map(async (imageUrl) => {
@@ -220,6 +228,19 @@ export default function ProductEditorModal({ product, duplicate = false, protect
 
         <div className="product-editor__body">
           <section className="product-editor__section">
+            <div className="product-editor__section-heading"><strong>Dostupnost i pakovanja</strong><span>Pakovanja imaju svoje cene; akcijska cena ispod važi za artikle bez dodatnih pakovanja.</span></div>
+            <label className="product-editor__field"><span>Dostupnost artikla</span><select value={availability} onChange={(event) => setAvailability(event.target.value as Availability)}>{Object.entries(availabilityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            <label><input type="checkbox" checked={archived} onChange={(event) => setArchived(event.target.checked)} /> Arhiviraj artikal — sakrij iz prodavnice</label>
+            {packages.map((option, index) => <div className="package-editor-row" key={option.id}>
+              <label className="product-editor__field"><span>Pakovanje</span><input required value={option.label} onChange={(event) => setPackages(packages.map((entry, i) => i === index ? { ...entry, label: event.target.value } : entry))} /></label>
+              <label className="product-editor__field"><span>Cena (RSD)</span><input required type="number" min="0.01" step="0.01" value={option.price || ''} onChange={(event) => setPackages(packages.map((entry, i) => i === index ? { ...entry, price: Number(event.target.value) } : entry))} /></label>
+              <label className="product-editor__field"><span>Dostupnost</span><select value={option.availability} onChange={(event) => setPackages(packages.map((entry, i) => i === index ? { ...entry, availability: event.target.value as Availability } : entry))}>{Object.entries(availabilityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+              <button type="button" onClick={() => setPackages(packages.filter((entry) => entry.id !== option.id))}>Ukloni pakovanje</button>
+            </div>)}
+            <button type="button" onClick={() => setPackages([...packages, { id: crypto.randomUUID(), label: '', price: 0, availability }])}>+ Dodaj pakovanje u ovaj artikal</button>
+          </section>
+
+          <section className="product-editor__section">
             <div className="product-editor__section-heading"><strong>Osnovni podaci</strong><span>Naziv, klasifikacija i proizvođač</span></div>
             <div className="product-editor__grid">
               <label className="product-editor__field product-editor__field--wide"><span>Naziv proizvoda</span><input type="text" value={name} onChange={(event) => setName(event.target.value)} placeholder="Na primer: Verimark 10 ml" required autoFocus={!duplicating} /></label>
@@ -232,10 +253,10 @@ export default function ProductEditorModal({ product, duplicate = false, protect
 
           <section className="product-editor__section">
             <div className="product-editor__section-heading"><strong>Cena i ponuda</strong><span>Podesite redovnu ili akcijsku cenu</span></div>
-            <div className="product-editor__price-row">
-              <label className="product-editor__field"><span>Redovna cena (RSD)</span><input type="number" min="0.01" step="0.01" value={price} onChange={(event) => setPrice(event.target.value)} onWheel={(event) => event.currentTarget.blur()} placeholder="0,00" required /></label>
+            <div className="product-editor__price-row" hidden={!!packages.length}>
+              <label className="product-editor__field"><span>Redovna cena (RSD)</span><input type="number" min="0.01" step="0.01" value={price} onChange={(event) => setPrice(event.target.value)} onWheel={(event) => event.currentTarget.blur()} placeholder="0,00" required={!packages.length} /></label>
               <label className="product-editor__switch"><input type="checkbox" checked={onDiscount} onChange={(event) => setOnDiscount(event.target.checked)} /><span aria-hidden="true" /><div><strong>Artikal je na akciji</strong><small>Prikaži sniženu cenu u prodavnici</small></div></label>
-              {onDiscount && <label className="product-editor__field"><span>Akcijska cena (RSD)</span><input type="number" min="0.01" step="0.01" value={discountPrice} onChange={(event) => setDiscountPrice(event.target.value)} onWheel={(event) => event.currentTarget.blur()} placeholder="0,00" required /></label>}
+              {onDiscount && <label className="product-editor__field"><span>Akcijska cena (RSD)</span><input type="number" min="0.01" step="0.01" value={discountPrice} onChange={(event) => setDiscountPrice(event.target.value)} onWheel={(event) => event.currentTarget.blur()} placeholder="0,00" required={!packages.length} /></label>}
             </div>
           </section>
 

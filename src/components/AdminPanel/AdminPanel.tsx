@@ -1,3 +1,4 @@
+import { type ProductOptions, availabilityLabels } from '../../data/productOptions';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -27,7 +28,7 @@ import AdminOrders from '../AdminOrders/AdminOrders';
 import AdminNews from '../AdminNews/AdminNews';
 import './AdminPanel.css';
 
-export type Product = {
+export type Product = ProductOptions & {
   productId: string; name: string; category: string; subcategory: string; manufacturer: string;
   packaging?: string;
   price: number; images: string[]; description: string;
@@ -35,7 +36,7 @@ export type Product = {
 };
 
 type DeleteTarget = { productId: string; images: string[] } | null;
-type ProductStatus = 'all' | 'regular' | 'discount' | 'missingImage';
+type ProductStatus = 'all' | 'regular' | 'discount' | 'missingImage' | 'archived' | 'active';
 type PaginationItem = { key: string; page?: number; label: string };
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
@@ -140,6 +141,8 @@ export default function AdminPanel() {
     if (manufacturerFilter.length) data = data.filter((product) => manufacturerFilter.includes(product.manufacturer));
     if (categoryFilter) data = data.filter((product) => product.category === categoryFilter);
     if (subcategoryFilter) data = data.filter((product) => product.subcategory === subcategoryFilter);
+    if (statusFilter === 'archived') data = data.filter((product) => product.archived);
+    if (statusFilter === 'active') data = data.filter((product) => !product.archived);
     if (statusFilter === 'regular') data = data.filter((product) => !product.onDiscount);
     if (statusFilter === 'discount') data = data.filter((product) => product.onDiscount);
     if (statusFilter === 'missingImage') data = data.filter((product) => !product.images?.length);
@@ -287,7 +290,7 @@ export default function AdminPanel() {
               <div className="admin-filter-title"><span><FilterAltOutlinedIcon /> Dodatni filteri</span>{activeFilterCount > 0 && <strong>{activeFilterCount}</strong>}</div>
               <label><span>Kategorija</span><select value={categoryFilter} onChange={(event) => { setCategoryFilter(event.target.value); setSubcategoryFilter(''); }}><option value="">Sve kategorije</option>{availableCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
               <label><span>Podkategorija</span><select value={subcategoryFilter} onChange={(event) => setSubcategoryFilter(event.target.value)} disabled={!availableSubcategories.length}><option value="">Sve podkategorije</option>{availableSubcategories.map((subcategory) => <option key={subcategory} value={subcategory}>{subcategory}</option>)}</select></label>
-              <label><span>Status artikla</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as ProductStatus)}><option value="all">Svi artikli</option><option value="regular">Redovna cena</option><option value="discount">Na akciji</option><option value="missingImage">Bez fotografije</option></select></label>
+              <label><span>Status artikla</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as ProductStatus)}><option value="all">Svi artikli</option><option value="active">Aktivni</option><option value="archived">Arhivirani</option><option value="regular">Redovna cena</option><option value="discount">Na akciji</option><option value="missingImage">Bez fotografije</option></select></label>
               <button className="admin-clear-filters" type="button" onClick={clearCatalogFilters} disabled={!activeFilterCount}><RestartAltIcon /> Poništi dodatne filtere</button>
             </section>
             <Filter onFilterChange={handleManufacturerFilterChange} availableManufacturers={availableManufacturers} resetKey={manufacturerFilterResetKey} />
@@ -304,7 +307,7 @@ export default function AdminPanel() {
                     <td><div className="admin-product-cell"><img src={product.images?.[0] || productPlaceholder} alt="" loading="lazy" decoding="async" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} /><div><strong>{product.name}</strong><span>{product.manufacturer || 'Bez proizvođača'}{product.packaging ? ` · ${product.packaging}` : ''}</span></div></div></td>
                     <td><strong className="admin-category">{product.category || '—'}</strong><span className="admin-subcategory">{product.subcategory || 'Bez podkategorije'}</span></td>
                     <td><strong className="admin-price">{formatPrice(product.onDiscount && product.discountPrice ? product.discountPrice : product.price)}</strong>{product.onDiscount && product.discountPrice ? <del>{formatPrice(product.price)}</del> : null}</td>
-                    <td>{product.onDiscount ? <span className="admin-badge admin-badge-sale">Akcija</span> : <span className="admin-badge">Redovna cena</span>}</td>
+                    <td>{product.archived ? <span className="admin-badge">Arhiviran</span> : <span className="admin-badge">{availabilityLabels[product.availability || 'on_order']}</span>}{product.onDiscount ? <span className="admin-badge admin-badge-sale">Akcija</span> : <span className="admin-badge">Redovna cena</span>}</td>
                     <td onClick={(event) => event.stopPropagation()}><div className="admin-thumbnails">{(product.images || []).slice(0, 4).map((image, index) => <button key={`${image}-${index}`} title={previewMode ? 'Pregled je samo za čitanje' : 'Postavi kao glavnu fotografiju'} disabled={previewMode} onClick={() => handleImageSelect(product, index)}><img src={image} alt={`${product.name} ${index + 1}`} loading="lazy" decoding="async" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} /></button>)}{!product.images?.length && <span className="admin-no-image">Nema slika</span>}</div></td>
                     <td onClick={(event) => event.stopPropagation()}><div className="admin-row-actions"><button className="admin-duplicate-button" title={previewMode ? 'Pregled je samo za čitanje' : 'Dupliciraj za drugo pakovanje'} disabled={previewMode} onClick={() => setDuplicateProduct(product)} aria-label={`Dupliciraj ${product.name}`}><ContentCopyOutlinedIcon /></button><button className="admin-delete-button" title={previewMode ? 'Pregled je samo za čitanje' : 'Obriši proizvod'} disabled={previewMode} onClick={() => setDeleteTarget({ productId: product.productId, images: product.images || [] })} aria-label={`Obriši ${product.name}`}><DeleteOutlineIcon /></button></div></td>
                   </tr>
