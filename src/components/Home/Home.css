@@ -504,13 +504,10 @@
   }
 }
 
-.shop-hero__visual { position: relative; }
-.shop-hero__visual > img { filter: brightness(.65); }
-.hero-offer-grid { position:absolute; inset:24px 24px 110px; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-.hero-offer-grid button { border:1px solid #ffffff80; border-radius:18px; background:#f8fbf0ed; color:#214d30; padding:16px; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:8px; cursor:pointer; text-align:left; }
-.hero-offer-grid button img { width:48px; height:48px; object-fit:contain; }
-.hero-offer-grid button span { font-size:12px; }
-@media(max-width:600px) { .hero-offer-grid { inset:16px 16px 90px; gap:8px; } .hero-offer-grid button { padding:12px; } .hero-offer-grid button img { width:34px; height:34px; } }
-
-.hero-offer-grid { z-index:3; }
-@media(max-width:700px) { .shop-hero__visual { min-height:380px; } }
+.shop-banner { background: #fafbf5; }
+.shop-banner__image { display: block; width: 100%; height: auto; }
+.shop-banner__actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; padding: 20px; }
+@media (max-width: 480px) {
+  .shop-banner__actions { gap: 8px; padding: 14px 12px; }
+  .shop-banner__actions .shop-button { padding: 12px; font-size: .75rem; }
+}

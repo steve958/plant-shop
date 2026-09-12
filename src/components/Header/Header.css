@@ -303,3 +303,11 @@
     font-size: 0.65rem;
   }
 }
+
+.shop-header__logo { display: flex; align-items: center; gap: 8px; }
+.shop-header__logo img { width: min(190px, 70%); height: auto; min-width: 0; }
+.shop-header__shop-label { position: static; display: inline-block; flex-shrink: 0; padding: 4px 6px; font-size: .6rem; letter-spacing: .06em; }
+@media (max-width: 410px) {
+  .shop-header__logo { gap: 4px; }
+  .shop-header__shop-label { display: inline-block; font-size: .5rem; padding: 4px; }
+}

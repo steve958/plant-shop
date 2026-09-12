@@ -1,3 +1,4 @@
+import RouteScroll from "./components/RouteScroll";
 import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import "./App.css";
@@ -14,22 +15,15 @@ function App() {
 
   useEffect(() => {
     setRouteLoading(true);
-    const frame = window.requestAnimationFrame(() => {
-      const targetId = decodeURIComponent(location.hash.replace(/^#/, ""));
-      const target = targetId ? document.getElementById(targetId) : null;
-      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
-      else window.scrollTo({ top: 0, behavior: "smooth" });
-    });
-
     const timer = window.setTimeout(() => setRouteLoading(false), 500);
     return () => {
-      window.cancelAnimationFrame(frame);
       window.clearTimeout(timer);
     };
   }, [location.hash, location.pathname]);
 
   return (
     <div className="container-fluid">
+      <RouteScroll />
       <Header />
       <NavBar />
       <div className="shop-route-stage" aria-busy={routeLoading}>

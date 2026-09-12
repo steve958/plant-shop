@@ -1,8 +1,8 @@
 import { type ProductOptions } from '../../data/productOptions';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useNavigationType } from "react-router-dom";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
@@ -15,7 +15,7 @@ import Sort from "../Sort/Sort";
 import Filter from "../Filter/Filter";
 import ProductCard from "../ProductCard/ProductCard";
 import Loader from "../Loader/Loader";
-import heroImage from "../../assets/protect.jpg";
+import heroImage from "../../assets/1000051751.png";
 import protectionIcon from "../../assets/zastita/insekticidi-Green.png";
 import nutritionIcon from "../../assets/ishrana/kristalna-Green.png";
 import seedIcon from "../../assets/seme/povrce-Green.png";
@@ -67,13 +67,12 @@ const featuredCategories = [
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [heroImageLoaded, setHeroImageLoaded] = useState(false);
-  const heroImageRef = useRef<HTMLImageElement>(null);
   const [sortBy, setSortBy] = useState("nameAsc");
   const [manufacturerFilter, setManufacturerFilter] = useState<string[]>([]);
   const [filterResetKey, setFilterResetKey] = useState(0);
   const searchQuery = useSelector((state: RootState) => state.search.query);
   const navigate = useNavigate();
+  const navigationType = useNavigationType();
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -96,20 +95,15 @@ export default function Home() {
     fetchProducts();
   }, []);
 
-  useLayoutEffect(() => {
-    const image = heroImageRef.current;
-    if (image?.complete && image.naturalWidth > 0) setHeroImageLoaded(true);
-  }, []);
-
   const isSearching = Boolean(searchQuery.trim());
 
   useEffect(() => {
-    if (!isSearching) return;
+    if (!isSearching || navigationType === "POP") return;
     setManufacturerFilter([]);
     setFilterResetKey((key) => key + 1);
     const timer = window.setTimeout(scrollToProductCatalogue, 180);
     return () => window.clearTimeout(timer);
-  }, [isSearching]);
+  }, [isSearching, navigationType]);
 
   const searchedCatalogue = useMemo(
     () => isSearching ? products : products.filter((product) => product.onDiscount),
@@ -189,44 +183,21 @@ export default function Home() {
 
   return (
     <main className="shop-home">
-      <section className="shop-hero">
-        <div className="shop-home__shell shop-hero__grid">
-          <div className="shop-hero__content">
-            <span className="shop-eyebrow">Znanje. Posvećenost. Uspeh.</span>
-            <h1>Od setve do berbe. Sve za vaš uspeh.</h1>
-            <p>
-              Zaštita i ishrana bilja, seme, sadnice i oprema za baštu.
-              Izaberite proizvode i pakovanje koje vam odgovara.
-            </p>
-            <div className="shop-hero__actions">
-              <a className="shop-button shop-button--primary" href="#akcija">
-                Pogledajte ponudu
-                <ArrowForwardIcon aria-hidden="true" />
-              </a>
-              <a
-                className="shop-button shop-button--secondary"
-                href="https://www.plantcentar.com/kontakt"
-              >
-                Pitajte stručnjaka
-              </a>
-            </div>
-          </div>
-          <figure className={`shop-hero__visual ${heroImageLoaded ? "shop-hero__visual--loaded" : ""}`}>
-            <img
-              ref={heroImageRef}
-              src={heroImage}
-              alt="Mlada biljka u kvalitetno pripremljenom zemljištu"
-              loading="eager"
-              decoding="async"
-              fetchPriority="high"
-              onLoad={() => setHeroImageLoaded(true)}
-            />
-            <div className="hero-offer-grid">{featuredCategories.map((category) => <button key={category.label} onClick={() => navigate(`/kategorija/${category.label === 'Garden program' ? 'Garden oprema i alati' : category.label}`)}><img src={category.icon} alt="" /><strong>{category.label}</strong><span>Istražite ponudu ↗</span></button>)}</div>
-            <figcaption>
-              <span>Plant Centar preporuka</span>
-              <strong>Pravi proizvod u pravo vreme</strong>
-            </figcaption>
-          </figure>
+      <section className="shop-banner" aria-label="Plant Centar webshop">
+        <h1 className="sr-only">Sve za vas i vašu proizvodnju na jednom mestu</h1>
+        <img
+          className="shop-banner__image"
+          src={heroImage}
+          alt="Plant Centar — sve za vas i vašu proizvodnju na jednom mestu. Zaštita bilja, ishrana bilja, seme i sadnice, garden oprema i alati."
+          width={1774}
+          height={887}
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
+        />
+        <div className="shop-banner__actions">
+          <a className="shop-button shop-button--primary" href="#akcija">Pogledajte ponudu <ArrowForwardIcon aria-hidden="true" /></a>
+          <a className="shop-button shop-button--secondary" href="https://www.plantcentar.com/kontakt">Pitajte stručnjaka</a>
         </div>
       </section>
 
@@ -278,7 +249,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="shop-products" id="akcija" data-product-catalogue>
+      <section className="shop-products" id="akcija" data-product-catalogue aria-busy={loading}>
         <div className="shop-home__shell">
           <header className="shop-section-heading shop-section-heading--products">
             <div>

@@ -154,7 +154,7 @@ export default function SubCategoryPage() {
 
     // 6) Render
     return (
-        <div className="sub-category-page-container" data-product-catalogue>
+        <div className="sub-category-page-container" data-product-catalogue aria-busy={loading}>
             <div className="sub-category-heading">
                 <span>Plant Centar asortiman</span>
                 <h1>{category || subCategory}</h1>

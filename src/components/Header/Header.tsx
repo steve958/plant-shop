@@ -87,10 +87,10 @@ export default function Header() {
             className="shop-header__logo"
             type="button"
             onClick={() => navigate("/početna")}
-            aria-label="Plant Centar prodavnica – početna"
+            aria-label="Plant Centar webshop – početna"
           >
             <img src={PlantCentarLogo} alt="Plant Centar" />
-            <span className="shop-header__shop-label">Prodavnica</span>
+            <span className="shop-header__shop-label">Webshop</span>
           </button>
 
           <label className="shop-search">
