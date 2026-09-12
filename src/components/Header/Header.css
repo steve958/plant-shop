@@ -304,10 +304,32 @@
   }
 }
 
-.shop-header__logo { display: flex; align-items: center; gap: 8px; }
-.shop-header__logo img { width: min(190px, 70%); height: auto; min-width: 0; }
-.shop-header__shop-label { position: static; display: inline-block; flex-shrink: 0; padding: 4px 6px; font-size: .6rem; letter-spacing: .06em; }
+.shop-header__logo {
+  display: flex;
+  width: min(220px, 100%);
+  flex-direction: column;
+  align-items: center;
+  justify-self: start;
+  gap: 3px;
+}
+
+.shop-header__logo img {
+  width: min(210px, 100%);
+  height: auto;
+  min-width: 0;
+  object-position: center;
+}
+
+.shop-header__shop-label {
+  position: static;
+  display: inline-block;
+  flex-shrink: 0;
+  padding: 4px 9px;
+  font-size: .6rem;
+  letter-spacing: .08em;
+}
+
 @media (max-width: 410px) {
-  .shop-header__logo { gap: 4px; }
+  .shop-header__logo { width: min(180px, 100%); gap: 2px; }
   .shop-header__shop-label { display: inline-block; font-size: .5rem; padding: 4px; }
 }
