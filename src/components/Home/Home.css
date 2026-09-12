@@ -537,7 +537,7 @@
 @media (max-width: 700px) {
   /* Keep touch targets clear of the lettering in the scaled-down artwork. */
   .shop-banner { padding-bottom: 48px; }
-  .shop-banner__actions { left: 5%; bottom: 10px; gap: 8px; }
+  .shop-banner__actions { left: 0; right: 0; bottom: 10px; justify-content: center; gap: 8px; }
   .shop-banner__actions .shop-button { min-height: 40px; padding: 0 12px; font-size: .65rem; }
   .shop-banner__actions .shop-button svg { width: 14px; height: 14px; }
 }
