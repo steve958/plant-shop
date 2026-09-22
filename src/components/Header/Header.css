@@ -333,3 +333,10 @@
   .shop-header__logo { width: min(180px, 100%); gap: 2px; }
   .shop-header__shop-label { display: inline-block; font-size: .5rem; padding: 4px; }
 }
+
+@media (min-width: 1051px) {
+  /* Slightly larger logo on desktop; tablet and mobile keep existing sizes. */
+  .shop-header__main-inner { grid-template-columns: minmax(250px, 300px) minmax(280px, 1fr) auto; }
+  .shop-header__logo { width: min(250px, 100%); }
+  .shop-header__logo img { width: min(240px, 100%); }
+}

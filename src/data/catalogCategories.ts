@@ -6,7 +6,7 @@ export type CatalogCategory = {
 export const catalogCategories: CatalogCategory[] = [
   {
     label: "Zaštita bilja",
-    subcategories: ["Herbicidi", "Fungicidi", "Insekticidi", "Organski preparati"],
+    subcategories: ["Herbicidi", "Fungicidi", "Insekticidi", "Organski preparati", "Rodenticidi", "Komunalna higijena", "Pomoćna sredstva"],
   },
   {
     label: "Ishrana bilja",
@@ -45,7 +45,7 @@ export const catalogCategories: CatalogCategory[] = [
       "Folije i veziva",
       "Supstrati malčevi i zemlja za cveće",
       "Saksije i žardinjere",
-      "Baštenski nameštaj",
+      "Bašta i domaćinstvo",
       "HTZ oprema",
     ],
   },

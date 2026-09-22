@@ -123,7 +123,7 @@ export default function ItemDetails() {
                 <span role="status">{availabilityLabels[availability]}</span>
               </div>
               <h1 className="product-title">{product.name}</h1>
-              {!!product.packages?.length && <label className="package-selector">Pakovanje<select value={packageId} onChange={(event) => { setPackageId(event.target.value); setQuantity(1); }}>{product.packages.map((option) => <option key={option.id} value={option.id}>{option.label} — {formatPrice(option.price)} · {availabilityLabels[option.availability]}</option>)}</select></label>}
+              {!!product.packages?.length && <label className="package-selector">Izaberite pakovanje<select value={packageId} onChange={(event) => { setPackageId(event.target.value); setQuantity(1); }}>{product.packages.map((option) => <option key={option.id} value={option.id}>{option.label} — {formatPrice(option.price)} · {availabilityLabels[option.availability]}</option>)}</select></label>}
               <div className="product-price-block">
                 <p className="product-price">{formatPrice(sellingPrice)}</p>
                 {!selectedPackage && product.onDiscount && product.discountPrice ? <><del>{formatPrice(product.price)}</del><span>Ušteda {formatPrice(product.price - product.discountPrice)}</span></> : null}

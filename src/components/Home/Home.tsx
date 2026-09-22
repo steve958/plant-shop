@@ -20,6 +20,7 @@ import protectionIcon from "../../assets/zastita/insekticidi-Green.png";
 import nutritionIcon from "../../assets/ishrana/kristalna-Green.png";
 import seedIcon from "../../assets/seme/povrce-Green.png";
 import gardenIcon from "../../assets/garden/masine-Green.png";
+import supportImage from "../../assets/protect.jpg";
 import { scrollToProductCatalogue } from "../scrollToProductCatalogue";
 import "./Home.css";
 
@@ -35,6 +36,7 @@ type Product = ProductOptions & {
   description?: string;
   onDiscount?: boolean;
   discountPrice?: number;
+  createdAt?: { seconds?: number; toMillis?: () => number } | null;
 };
 
 const featuredCategories = [
@@ -153,6 +155,21 @@ export default function Home() {
       }
     });
   }, [searchedCatalogue, searchQuery, manufacturerFilter, sortBy]);
+
+  const seasonalProducts = useMemo(
+    () => products.filter((product) => !product.onDiscount).slice(0, 8),
+    [products]
+  );
+
+  const recentProducts = useMemo(() => {
+    const createdAtMillis = (product: Product) => {
+      const value = product.createdAt;
+      if (!value) return 0;
+      if (typeof value.toMillis === "function") return value.toMillis();
+      return typeof value.seconds === "number" ? value.seconds * 1000 : 0;
+    };
+    return [...products].sort((first, second) => createdAtMillis(second) - createdAtMillis(first)).slice(0, 8);
+  }, [products]);
 
   const handleAddToCart = (productId: string) => {
     const product = products.find((item) => item.productId === productId);
@@ -293,6 +310,70 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {!isSearching && seasonalProducts.length > 0 && (
+        <section className="shop-rail" aria-label="Aktuelna sezonska ponuda">
+          <div className="shop-home__shell">
+            <header className="shop-section-heading">
+              <div>
+                <span className="shop-eyebrow">Sezonski izbor</span>
+                <h2>Aktuelna sezonska ponuda</h2>
+              </div>
+              <p>Proizvodi koje u ovom delu sezone najčešće traže proizvođači i baštovani.</p>
+            </header>
+            <div className="shop-rail__grid">
+              {seasonalProducts.map((product) => (
+                <ProductCard
+                  key={product.productId}
+                  product={product}
+                  onClick={(productId) => navigate(`/proizvod/${productId}`)}
+                  onAddToCart={handleAddToCart}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {!isSearching && (
+        <section className="shop-support" aria-label="Stručna podrška">
+          <div className="shop-home__shell">
+            <div className="shop-support__card">
+              <div className="shop-support__copy">
+                <span className="shop-eyebrow">Plant Centar tim</span>
+                <h2>Potrebna vam je stručna podrška?</h2>
+                <p>Naši savetnici vam pomažu pri izboru proizvoda, doziranju i primeni — besplatno, uz svaku kupovinu.</p>
+                <a className="shop-button shop-button--primary" href="https://www.plantcentar.com/kontakt">Kontaktirajte nas <ArrowForwardIcon aria-hidden="true" /></a>
+              </div>
+              <img className="shop-support__image" src={supportImage} alt="Ruke drže zemlju sa mladim izdankom" loading="lazy" decoding="async" />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {!isSearching && recentProducts.length > 0 && (
+        <section className="shop-rail shop-rail--recent" aria-label="Nedavno dodati proizvodi">
+          <div className="shop-home__shell">
+            <header className="shop-section-heading">
+              <div>
+                <span className="shop-eyebrow">Novo u ponudi</span>
+                <h2>Nedavno dodati proizvodi</h2>
+              </div>
+              <p>Najnoviji artikli u Plant Centar asortimanu.</p>
+            </header>
+            <div className="shop-rail__grid">
+              {recentProducts.map((product) => (
+                <ProductCard
+                  key={product.productId}
+                  product={product}
+                  onClick={(productId) => navigate(`/proizvod/${productId}`)}
+                  onAddToCart={handleAddToCart}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
     </main>
   );
 }

@@ -1,7 +1,7 @@
 import { type Availability, type PackageOption, type ProductOptions, availabilityLabels } from '../../data/productOptions';
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { deleteObject, getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 import CloseIcon from '@mui/icons-material/Close';
 import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
@@ -194,7 +194,7 @@ export default function ProductEditorModal({ product, duplicate = false, protect
         await updateDoc(doc(db, 'products', product.productId), savedProductData);
         savedProduct = { ...savedProductData, productId: product.productId, discountPrice: !packages.length && onDiscount ? salePrice : undefined };
       } else {
-        const createdDocument = await addDoc(collection(db, 'products'), savedProductData);
+        const createdDocument = await addDoc(collection(db, 'products'), { ...savedProductData, createdAt: serverTimestamp() });
         savedProduct = { ...savedProductData, productId: createdDocument.id, discountPrice: !packages.length && onDiscount ? salePrice : undefined };
       }
 

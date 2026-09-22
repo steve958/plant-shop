@@ -32,6 +32,9 @@ const categoriesData = [
       "Fungicidi",
       "Insekticidi",
       "Organski preparati",
+      "Rodenticidi",
+      "Komunalna higijena",
+      "Pomoćna sredstva",
     ],
   },
   {
@@ -71,7 +74,7 @@ const categoriesData = [
       "Folije i veziva",
       "Supstrati malčevi i zemlja za cveće",
       "Saksije i žardinjere",
-      "Baštenski nameštaj",
+      "Bašta i domaćinstvo",
       "HTZ oprema"
     ],
   },

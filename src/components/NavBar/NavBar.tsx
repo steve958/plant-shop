@@ -9,6 +9,9 @@ import herbIconLogo from '../../assets/zastita/herbicidi-White.png';
 import fungiIconLogo from '../../assets/zastita/fungicidi-White.png';
 import insectIconLogo from '../../assets/zastita/insekticidi-White.png';
 import organicIconLogo from '../../assets/zastita/organski-White.png';
+import rodenticidiIconLogo from '../../assets/zastita/rodenticidi-White.png';
+import komunalnaIconLogo from '../../assets/zastita/komunalna-White.png';
+import pomocnaIconLogo from '../../assets/zastita/pomocna-White.png';
 
 import basicFertIcon from '../../assets/ishrana/osnovna-White.png';
 import cristalFertIcon from '../../assets/ishrana/kristalna-White.png';
@@ -49,6 +52,9 @@ const navItems = [
       { label: "Fungicidi", route: "/podkategorija/Fungicidi", subItemIcon: fungiIconLogo },
       { label: "Insekticidi", route: "/podkategorija/Insekticidi", subItemIcon: insectIconLogo },
       { label: "Organski preparati", route: "/podkategorija/Organski preparati", subItemIcon: organicIconLogo },
+      { label: "Rodenticidi", route: "/podkategorija/Rodenticidi", subItemIcon: rodenticidiIconLogo },
+      { label: "Komunalna higijena", route: "/podkategorija/Komunalna higijena", subItemIcon: komunalnaIconLogo },
+      { label: "Pomoćna sredstva", route: "/podkategorija/Pomoćna sredstva", subItemIcon: pomocnaIconLogo },
     ],
   },
   {
@@ -92,7 +98,7 @@ const navItems = [
       { label: "Folije i veziva", route: "/podkategorija/Folije i veziva", subItemIcon: foilsLogo },
       { label: "Supstrati malčevi i zemlja za cveće", route: "/podkategorija/Supstrati malčevi i zemlja za cveće", subItemIcon: substrateLogo },
       { label: "Saksije i žardinjere", route: "/podkategorija/Saksije i žardinjere", subItemIcon: potsLogo },
-      { label: "Baštenski nameštaj", route: "/podkategorija/Baštenski nameštaj", subItemIcon: gardenLogo },
+      { label: "Bašta i domaćinstvo", route: "/podkategorija/Bašta i domaćinstvo", subItemIcon: gardenLogo },
       { label: "HTZ oprema", route: "/podkategorija/HTZ oprema", subItemIcon: workSuitsLogo },
     ],
   },
