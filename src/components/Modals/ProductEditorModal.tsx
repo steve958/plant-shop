@@ -3,7 +3,15 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 're
 import { useSelector } from 'react-redux';
 import { addDoc, collection, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { deleteObject, getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
+import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
+import LayersOutlinedIcon from '@mui/icons-material/LayersOutlined';
+import PhotoLibraryOutlinedIcon from '@mui/icons-material/PhotoLibraryOutlined';
+import SellOutlinedIcon from '@mui/icons-material/SellOutlined';
+import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
@@ -235,23 +243,8 @@ export default function ProductEditorModal({ product, duplicate = false, protect
         </header>
 
         <div className="product-editor__body">
-          <section className="product-editor__section">
-            <div className="product-editor__section-heading"><strong>Dostupnost i pakovanja</strong><span>Pakovanja imaju svoje cene; svako pakovanje može imati posebnu akcijsku cenu.</span></div>
-            <label className="product-editor__field"><span>Dostupnost artikla</span><select value={availability} onChange={(event) => setAvailability(event.target.value as Availability)}>{Object.entries(availabilityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-            <label><input type="checkbox" checked={archived} onChange={(event) => setArchived(event.target.checked)} /> Arhiviraj artikal — sakrij iz prodavnice</label>
-            <label><input type="checkbox" checked={seasonal} onChange={(event) => setSeasonal(event.target.checked)} /> Prikaži u sekciji „Aktuelna sezonska ponuda“</label>
-            {packages.map((option, index) => <div className="package-editor-row" key={option.id}>
-              <label className="product-editor__field"><span>Pakovanje</span><input required value={option.label} onChange={(event) => setPackages(packages.map((entry, i) => i === index ? { ...entry, label: event.target.value } : entry))} /></label>
-              <label className="product-editor__field"><span>Cena (RSD)</span><input required type="number" min="0.01" step="0.01" value={option.price || ''} onChange={(event) => setPackages(packages.map((entry, i) => i === index ? { ...entry, price: Number(event.target.value) } : entry))} /></label>
-              <label className="product-editor__field"><span>Akcijska cena (RSD)</span><input type="number" min="0.01" step="0.01" value={option.discountPrice || ''} placeholder="Bez akcije" onWheel={(event) => event.currentTarget.blur()} onChange={(event) => setPackages(packages.map((entry, i) => i === index ? { ...entry, discountPrice: event.target.value === '' ? undefined : Number(event.target.value) } : entry))} /></label>
-              <label className="product-editor__field"><span>Dostupnost</span><select value={option.availability} onChange={(event) => setPackages(packages.map((entry, i) => i === index ? { ...entry, availability: event.target.value as Availability } : entry))}>{Object.entries(availabilityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-              <button type="button" onClick={() => setPackages(packages.filter((entry) => entry.id !== option.id))}>Ukloni pakovanje</button>
-            </div>)}
-            <button type="button" onClick={() => setPackages([...packages, { id: crypto.randomUUID(), label: '', price: 0, availability }])}>+ Dodaj pakovanje u ovaj artikal</button>
-          </section>
-
-          <section className="product-editor__section">
-            <div className="product-editor__section-heading"><strong>Osnovni podaci</strong><span>Naziv, klasifikacija i proizvođač</span></div>
+          <section className="product-editor__section product-editor__section--wide">
+            <div className="product-editor__section-heading"><i aria-hidden="true"><Inventory2OutlinedIcon /></i><div><strong>Osnovni podaci</strong><span>Naziv, klasifikacija i proizvođač</span></div></div>
             <div className="product-editor__grid">
               <label className="product-editor__field product-editor__field--wide"><span>Naziv proizvoda</span><input type="text" value={name} onChange={(event) => setName(event.target.value)} placeholder="Na primer: Verimark 10 ml" required autoFocus={!duplicating} /></label>
               <label className="product-editor__field"><span>Kategorija</span><select value={category} onChange={(event) => handleCategoryChange(event.target.value)} required><option value="">Izaberite kategoriju</option>{catalogCategories.map((item) => <option key={item.label} value={item.label}>{item.label}</option>)}</select></label>
@@ -262,21 +255,54 @@ export default function ProductEditorModal({ product, duplicate = false, protect
           </section>
 
           <section className="product-editor__section">
-            <div className="product-editor__section-heading"><strong>Cena i ponuda</strong><span>Podesite redovnu ili akcijsku cenu</span></div>
-            <div className="product-editor__price-row" hidden={!!packages.length}>
-              <label className="product-editor__field"><span>Redovna cena (RSD)</span><input type="number" min="0.01" step="0.01" value={price} onChange={(event) => setPrice(event.target.value)} onWheel={(event) => event.currentTarget.blur()} placeholder="0,00" required={!packages.length} /></label>
+            <div className="product-editor__section-heading"><i aria-hidden="true"><SellOutlinedIcon /></i><div><strong>Cena i ponuda</strong><span>Podesite redovnu ili akcijsku cenu</span></div></div>
+            {packages.length ? <p className="product-editor__note">Artikal ima {packages.length} {packages.length === 1 ? 'pakovanje' : 'pakovanja'} — redovna i akcijska cena se podešavaju za svako pakovanje posebno u sekciji „Pakovanja“.</p> : <div className="product-editor__price-row">
+              <label className="product-editor__field"><span>Redovna cena (RSD)</span><input type="number" min="0.01" step="0.01" value={price} onChange={(event) => setPrice(event.target.value)} onWheel={(event) => event.currentTarget.blur()} placeholder="0,00" required /></label>
               <label className="product-editor__switch"><input type="checkbox" checked={onDiscount} onChange={(event) => setOnDiscount(event.target.checked)} /><span aria-hidden="true" /><div><strong>Artikal je na akciji</strong><small>Prikaži sniženu cenu u prodavnici</small></div></label>
-              {onDiscount && <label className="product-editor__field"><span>Akcijska cena (RSD)</span><input type="number" min="0.01" step="0.01" value={discountPrice} onChange={(event) => setDiscountPrice(event.target.value)} onWheel={(event) => event.currentTarget.blur()} placeholder="0,00" required={!packages.length} /></label>}
+              {onDiscount && <label className="product-editor__field"><span>Akcijska cena (RSD)</span><input type="number" min="0.01" step="0.01" value={discountPrice} onChange={(event) => setDiscountPrice(event.target.value)} onWheel={(event) => event.currentTarget.blur()} placeholder="0,00" required /></label>}
+            </div>}
+          </section>
+
+          <section className="product-editor__section">
+            <div className="product-editor__section-heading"><i aria-hidden="true"><TuneOutlinedIcon /></i><div><strong>Status i vidljivost</strong><span>Dostupnost i prikaz artikla u prodavnici</span></div></div>
+            <div className="product-editor__price-row">
+              <label className="product-editor__field"><span>Dostupnost artikla</span><select value={availability} onChange={(event) => setAvailability(event.target.value as Availability)}>{Object.entries(availabilityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+              <label className="product-editor__switch"><input type="checkbox" checked={seasonal} onChange={(event) => setSeasonal(event.target.checked)} /><span aria-hidden="true" /><div><strong>Aktuelna sezonska ponuda</strong><small>Prikaži artikal u sezonskoj sekciji na početnoj</small></div></label>
+              <label className="product-editor__switch product-editor__switch--danger"><input type="checkbox" checked={archived} onChange={(event) => setArchived(event.target.checked)} /><span aria-hidden="true" /><div><strong>Arhiviraj artikal</strong><small>Sakrij artikal iz prodavnice</small></div></label>
             </div>
           </section>
 
-          <section className="product-editor__section">
-            <div className="product-editor__section-heading"><strong>Opis proizvoda</strong><span>Jasan opis pomaže kupcu pri izboru</span></div>
+          <section className="product-editor__section product-editor__section--wide">
+            <div className="product-editor__section-heading product-editor__section-heading--inline"><i aria-hidden="true"><LayersOutlinedIcon /></i><div><strong>Pakovanja</strong><span>Svako pakovanje ima svoju cenu, akcijsku cenu i dostupnost</span></div>{packages.length > 0 && <b>{packages.length}</b>}</div>
+            {packages.length === 0 && <p className="product-editor__note">Artikal se prodaje u jednom pakovanju. Dodajte pakovanja ako kupac bira između više veličina.</p>}
+            <div className="package-editor-list">
+              {packages.map((option, index) => {
+                const onSale = packageHasDiscount(option);
+                return <div className={`package-editor-row${onSale ? ' package-editor-row--sale' : ''}`} key={option.id}>
+                  <div className="package-editor-row__header">
+                    <strong>Pakovanje {index + 1}</strong>
+                    {onSale && <span className="package-editor-row__badge">Akcija −{Math.round(((option.price - option.discountPrice!) / option.price) * 100)}%</span>}
+                    <button type="button" className="package-editor-row__remove" onClick={() => setPackages(packages.filter((entry) => entry.id !== option.id))} aria-label={`Ukloni pakovanje ${index + 1}`} title="Ukloni pakovanje"><DeleteOutlineIcon /></button>
+                  </div>
+                  <div className="package-editor-row__fields">
+                    <label className="product-editor__field"><span>Naziv pakovanja</span><input required value={option.label} placeholder="npr. 1 kg" onChange={(event) => setPackages(packages.map((entry, i) => i === index ? { ...entry, label: event.target.value } : entry))} /></label>
+                    <label className="product-editor__field"><span>Cena (RSD)</span><input required type="number" min="0.01" step="0.01" value={option.price || ''} placeholder="0,00" onWheel={(event) => event.currentTarget.blur()} onChange={(event) => setPackages(packages.map((entry, i) => i === index ? { ...entry, price: Number(event.target.value) } : entry))} /></label>
+                    <label className="product-editor__field"><span>Akcijska cena (RSD)</span><input type="number" min="0.01" step="0.01" value={option.discountPrice || ''} placeholder="Bez akcije" onWheel={(event) => event.currentTarget.blur()} onChange={(event) => setPackages(packages.map((entry, i) => i === index ? { ...entry, discountPrice: event.target.value === '' ? undefined : Number(event.target.value) } : entry))} /></label>
+                    <label className="product-editor__field"><span>Dostupnost</span><select value={option.availability} onChange={(event) => setPackages(packages.map((entry, i) => i === index ? { ...entry, availability: event.target.value as Availability } : entry))}>{Object.entries(availabilityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                  </div>
+                </div>;
+              })}
+            </div>
+            <button type="button" className="package-editor-add" onClick={() => setPackages([...packages, { id: crypto.randomUUID(), label: '', price: 0, availability }])}><AddIcon /> Dodaj pakovanje</button>
+          </section>
+
+          <section className="product-editor__section product-editor__section--wide">
+            <div className="product-editor__section-heading"><i aria-hidden="true"><DescriptionOutlinedIcon /></i><div><strong>Opis proizvoda</strong><span>Jasan opis pomaže kupcu pri izboru</span></div></div>
             <label className="product-editor__field"><span>Opis</span><textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={5} placeholder="Namena, način primene, pakovanje i druge korisne informacije…" /></label>
           </section>
 
-          <section className="product-editor__section">
-            <div className="product-editor__section-heading product-editor__section-heading--inline"><div><strong>Fotografije</strong><span>Prva fotografija je glavna na kartici proizvoda</span></div><b>{previews.length}/{MAX_IMAGES}</b></div>
+          <section className="product-editor__section product-editor__section--wide">
+            <div className="product-editor__section-heading product-editor__section-heading--inline"><i aria-hidden="true"><PhotoLibraryOutlinedIcon /></i><div><strong>Fotografije</strong><span>Prva fotografija je glavna na kartici proizvoda</span></div><b>{previews.length}/{MAX_IMAGES}</b></div>
             <label className="product-editor__upload"><CloudUploadOutlinedIcon /><strong>Dodajte fotografije proizvoda</strong><span>JPG, PNG ili WEBP · najviše {MAX_IMAGES} fotografija</span><input type="file" accept="image/*" multiple onChange={handleImagesChange} disabled={previews.length >= MAX_IMAGES || loading} /></label>
             {previews.length > 0 ? <div className="product-editor__previews">{previews.map((preview, index) => <article key={preview.id}><img src={preview.url} alt={`Fotografija proizvoda ${index + 1}`} />{index === 0 && <span>Glavna</span>}<button type="button" onClick={() => removeImage(preview.id)} disabled={loading} aria-label={`Ukloni fotografiju ${index + 1}`}><CloseIcon /></button></article>)}</div> : <div className="product-editor__no-images"><ImageOutlinedIcon /><span>Još nema dodatih fotografija</span></div>}
           </section>
