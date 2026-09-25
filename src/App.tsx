@@ -11,15 +11,29 @@ import Loader from "./components/Loader/Loader";
 
 function App() {
   const location = useLocation();
-  const [routeLoading, setRouteLoading] = useState(true);
+  const routeKey = `${location.pathname}${location.hash}`;
+  // Derived during render so the overlay is already up in the first frame of a
+  // new route; setting it from an effect let the page paint once uncovered.
+  const [readyRouteKey, setReadyRouteKey] = useState<string | null>(null);
+  const routeLoading = readyRouteKey !== routeKey;
 
   useEffect(() => {
-    setRouteLoading(true);
-    const timer = window.setTimeout(() => setRouteLoading(false), 500);
+    let frame = 0;
+    // Keep covering the page until catalogues have loaded and RouteScroll has
+    // moved to its target, so the top of the page never flashes before a jump.
+    const reveal = () => {
+      if (document.querySelector('[data-product-catalogue][aria-busy="true"]')) {
+        frame = window.requestAnimationFrame(reveal);
+        return;
+      }
+      frame = window.requestAnimationFrame(() => setReadyRouteKey(routeKey));
+    };
+    const timer = window.setTimeout(reveal, 500);
     return () => {
       window.clearTimeout(timer);
+      window.cancelAnimationFrame(frame);
     };
-  }, [location.hash, location.pathname]);
+  }, [routeKey]);
 
   return (
     <div className="container-fluid">

@@ -21,8 +21,11 @@
   inset: 0;
   z-index: 90;
   min-height: 460px;
-  background: rgba(247, 249, 244, 0.96);
-  backdrop-filter: blur(3px);
+  /* Opaque so nothing underneath (e.g. the hero banner) shows through. */
+  background: #f7f9f4;
+  /* Anchor the spinner near the top so it stays in view on tall pages. */
+  justify-content: flex-start;
+  padding-top: clamp(80px, 22vh, 220px);
 }
 
 .shop-loader__circle {
