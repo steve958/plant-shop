@@ -330,7 +330,7 @@ export default function Home() {
         </div>
       </section>
 
-      {!isSearching && seasonalProducts.length > 0 && (
+      {!isSearching && (
         <section className="shop-rail" aria-label="Aktuelna sezonska ponuda">
           <div className="shop-home__shell">
             <header className="shop-section-heading">
@@ -340,7 +340,12 @@ export default function Home() {
               </div>
               <p>Proizvodi koje u ovom delu sezone najčešće traže proizvođači i baštovani.</p>
             </header>
-            <div className="shop-rail__grid">
+            {!loading && seasonalProducts.length === 0 ? (
+              <div className="shop-empty-state">
+                <strong>Sezonska ponuda se uskoro dopunjuje.</strong>
+                <span>Pogledajte proizvode na akciji ili nas kontaktirajte za preporuku.</span>
+              </div>
+            ) : <div className="shop-rail__grid">
               {seasonalProducts.map((product) => (
                 <ProductCard
                   key={product.productId}
@@ -349,7 +354,7 @@ export default function Home() {
                   onAddToCart={handleAddToCart}
                 />
               ))}
-            </div>
+            </div>}
           </div>
         </section>
       )}
