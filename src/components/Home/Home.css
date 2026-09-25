@@ -269,145 +269,82 @@
   line-height: 1.65;
 }
 
-/* "Izaberite program" cards, matching the plantcentar.com "Čime se bavimo" section. */
 .shop-categories__grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 22px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
 }
 
 .shop-category-card {
   min-width: 0;
-  min-height: 310px;
+  min-height: 210px;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  padding: 27px;
-  border: 1px solid rgba(38, 83, 50, 0.12);
-  border-radius: 18px;
-  color: #263a2e;
-  background: linear-gradient(145deg, #fff, #fbfcf9);
-  box-shadow: 0 10px 30px rgba(25, 67, 39, 0.07);
-  font: inherit;
+  align-items: flex-start;
+  padding: 24px;
+  border: 1px solid var(--shop-line);
+  border-radius: 21px;
+  color: inherit;
+  background: linear-gradient(145deg, #fff, #f7f8f3);
+  box-shadow: 0 12px 30px rgba(31, 63, 42, 0.055);
   text-align: left;
-  text-decoration: none;
   cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
+  transition: transform 190ms ease, border-color 190ms ease, box-shadow 190ms ease;
 }
 
 .shop-category-card:hover,
 .shop-category-card:focus-visible {
-  transform: translateY(-6px);
-  border-color: rgba(52, 151, 61, 0.26);
-  background: linear-gradient(145deg, #fff, #f5faf2);
-  box-shadow: 0 20px 48px rgba(25, 67, 39, 0.13);
-}
-
-.shop-category-card:focus-visible {
-  outline: 3px solid rgba(84, 193, 67, 0.38);
-  outline-offset: 4px;
-}
-
-.shop-category-card__topline {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
+  border-color: rgba(84, 193, 67, 0.42);
+  outline: none;
+  transform: translateY(-5px);
+  box-shadow: var(--shop-shadow-md);
 }
 
 .shop-category-card__icon {
-  position: relative;
-  width: 78px;
-  height: 78px;
-  overflow: hidden;
-  border-radius: 20px;
-  background: #f0f7ed;
-  transition: transform 0.25s ease, border-radius 0.25s ease;
+  width: 55px;
+  height: 55px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: #eef8ed;
 }
 
 .shop-category-card__icon img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: opacity 0.25s ease, transform 0.35s ease;
-}
-
-.shop-category-card__icon-active {
-  opacity: 0;
-}
-
-.shop-category-card__number {
-  color: #d2ddd4;
-  font-size: 21px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-}
-
-.shop-category-card__copy {
-  margin-top: 28px;
+  width: 37px;
+  height: 37px;
+  object-fit: contain;
 }
 
 .shop-category-card__copy {
   display: flex;
   flex-direction: column;
+  margin-top: 24px;
 }
 
-.shop-category-card__title {
-  margin: 0 0 11px;
-  color: #1d3e2a;
-  font-size: 19px;
-  font-weight: 650;
-  line-height: 1.35;
+.shop-category-card__copy strong {
+  color: var(--shop-green-900);
+  font-size: 0.94rem;
+  font-weight: 600;
 }
 
-.shop-category-card__text {
-  margin: 0;
-  color: #6a766e;
-  font-size: 12px;
-  line-height: 1.7;
+.shop-category-card__copy small {
+  margin-top: 8px;
+  color: var(--shop-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.55;
 }
 
-.shop-category-card__action {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+.shop-category-card > svg {
+  width: 19px;
+  height: 19px;
   margin-top: auto;
-  padding-top: 24px;
-  color: #2d963f;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  color: var(--shop-green-700);
+  transition: transform 180ms ease;
 }
 
-.shop-category-card__action span {
-  font-size: 17px;
-  line-height: 1;
-  transition: transform 0.2s ease;
-}
-
-.shop-category-card:hover .shop-category-card__icon,
-.shop-category-card:focus-visible .shop-category-card__icon {
-  transform: translateY(-2px);
-  border-radius: 24px;
-}
-
-.shop-category-card:hover .shop-category-card__icon-default,
-.shop-category-card:focus-visible .shop-category-card__icon-default {
-  opacity: 0;
-}
-
-.shop-category-card:hover .shop-category-card__icon-active,
-.shop-category-card:focus-visible .shop-category-card__icon-active {
-  opacity: 1;
-  transform: scale(1.035);
-}
-
-.shop-category-card:hover .shop-category-card__action span,
-.shop-category-card:focus-visible .shop-category-card__action span {
-  transform: translateX(4px);
+.shop-category-card:hover > svg {
+  transform: translateX(5px);
 }
 
 .shop-products__layout {
@@ -552,23 +489,8 @@
     grid-template-columns: 1fr;
   }
 
-  .shop-categories__grid {
-    gap: 17px;
-  }
-
   .shop-category-card {
-    min-height: 275px;
-    padding: 24px;
-  }
-
-  .shop-category-card__icon {
-    width: 70px;
-    height: 70px;
-    border-radius: 18px;
-  }
-
-  .shop-category-card__copy {
-    margin-top: 24px;
+    min-height: 190px;
   }
 }
 
@@ -627,6 +549,15 @@
 
 @media (min-width: 701px) and (max-width: 1050px) {
   .shop-banner__image { height: 650px; }
+}
+
+@media (min-width: 761px) {
+  /* Roomier category cards on desktop so the icons hold their own against the banner. */
+  .shop-category-card { min-height: 236px; padding: 26px; }
+  .shop-category-card__icon { width: 68px; height: 68px; border-radius: 18px; }
+  .shop-category-card__icon img { width: 46px; height: 46px; }
+  .shop-category-card__copy strong { font-size: 1rem; }
+  .shop-category-card__copy small { font-size: 0.79rem; }
 }
 
 /* Homepage rails: seasonal offer, expert support banner, recently added. */

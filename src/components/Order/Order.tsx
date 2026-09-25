@@ -2,7 +2,7 @@ import { cartKey, effectivePackagePrice, isOrderable, type PackageOption } from 
 import { shopContact } from '../../data/shopContact';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { addDoc, collection, serverTimestamp, doc, getDoc } from 'firebase/firestore';
@@ -34,9 +34,10 @@ const Order = () => {
     { productId: 'preview-1', name: 'Verimark 10 ml', image: productPlaceholder, price: 1490, quantity: 1 },
     { productId: 'preview-2', name: 'Fertico Aminomax 80', image: productPlaceholder, price: 980, quantity: 2 },
   ] : cartItems;
-  const { register, handleSubmit, formState: { errors } } = useForm<GuestOrderData>({
+  const { register, handleSubmit, control, formState: { errors } } = useForm<GuestOrderData>({
     defaultValues: checkoutPreview ? previewCustomer : { note: '', privacyAccepted: false },
   });
+  const privacyAccepted = useWatch({ control, name: 'privacyAccepted' });
   const [submitting, setSubmitting] = useState(false);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -48,7 +49,7 @@ const Order = () => {
   }).format(price);
 
   const submitOrder = async (data: GuestOrderData) => {
-    if (!items.length || submitting || checkoutPreview) return;
+    if (!items.length || submitting || checkoutPreview || !data.privacyAccepted) return;
     setSubmitting(true);
     const orderNumber = `PC-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${Date.now().toString().slice(-4)}`;
     try {
@@ -137,8 +138,8 @@ const Order = () => {
           <div className="order-total"><span>Ukupno bez dostave</span><strong>{formatPrice(total)}</strong></div>
           <p className="order-contact-note">Cena dostave zavisi od pakovanja i potvrđuje se pri dogovoru.</p>
           <label className="order-consent"><input type="checkbox" disabled={checkoutPreview || submitting} {...register('privacyAccepted', { required: 'Potvrdite saglasnost za obradu podataka' })} /><span>Saglasan/na sam da Plant Centar koristi unete podatke za obradu ove porudžbine.</span></label>
-          {errors.privacyAccepted && <span className="order-consent-error">{errors.privacyAccepted.message}</span>}
-          <button className="order-primary" type="submit" disabled={submitting || checkoutPreview}>{checkoutPreview ? 'Pregled — čuvanje isključeno' : submitting ? 'Čuvamo porudžbinu...' : 'Pošalji porudžbinu'}</button>
+          {!privacyAccepted && !checkoutPreview && <span className="order-consent-hint">Označite saglasnost da biste poslali porudžbinu.</span>}
+          <button className="order-primary" type="submit" disabled={submitting || checkoutPreview || !privacyAccepted} title={!privacyAccepted ? 'Potrebna je saglasnost za obradu podataka' : undefined}>{checkoutPreview ? 'Pregled — čuvanje isključeno' : submitting ? 'Čuvamo porudžbinu...' : 'Pošalji porudžbinu'}</button>
           <button className="order-back" type="button" onClick={() => navigate('/korpa')} disabled={submitting}>Nazad u korpu</button>
           <p className="order-contact-note">Ovo nije automatska naplata. Administrator potvrđuje dostupnost, dostavu i način plaćanja sa vama.</p>
         </aside>

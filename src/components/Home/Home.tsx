@@ -16,18 +16,11 @@ import Filter from "../Filter/Filter";
 import ProductCard from "../ProductCard/ProductCard";
 import Loader from "../Loader/Loader";
 import heroImage from "../../assets/1000051751.png";
-import supportIconDefault from "../../assets/program/podrska-White.png";
-import supportIconActive from "../../assets/program/podrska-Green.png";
-import protectionIconDefault from "../../assets/program/zastita-White.png";
-import protectionIconActive from "../../assets/program/zastita-Green.png";
-import nutritionIconDefault from "../../assets/program/ishrana-White.png";
-import nutritionIconActive from "../../assets/program/ishrana-Green.png";
-import seedIconDefault from "../../assets/program/seme-White.png";
-import seedIconActive from "../../assets/program/seme-Green.png";
-import petIconDefault from "../../assets/program/pet-White.png";
-import petIconActive from "../../assets/program/pet-Green.png";
-import gardenIconDefault from "../../assets/program/garden-White.png";
-import gardenIconActive from "../../assets/program/garden-Green.png";
+// Program icons from the plantcentar.com "Čime se bavimo" section.
+import protectionIcon from "../../assets/program/zastita-Green.png";
+import nutritionIcon from "../../assets/program/ishrana-Green.png";
+import seedIcon from "../../assets/program/seme-Green.png";
+import gardenIcon from "../../assets/program/garden-Green.png";
 import supportImage from "../../assets/protect.jpg";
 import { scrollToProductCatalogue } from "../scrollToProductCatalogue";
 import "./Home.css";
@@ -47,49 +40,30 @@ type Product = ProductOptions & {
   createdAt?: { seconds?: number; toMillis?: () => number } | null;
 };
 
-// Same programs, copy and icons as the "Čime se bavimo" section on plantcentar.com.
 const featuredCategories = [
   {
-    label: "Stručna podrška",
-    description: "Stručni saveti prilagođeni ishrani i zaštiti vaših biljaka.",
-    href: "https://www.plantcentar.com/kontakt",
-    iconDefault: supportIconDefault,
-    iconActive: supportIconActive,
-  },
-  {
     label: "Zaštita bilja",
-    description: "Pouzdana sredstva i rešenja za efikasnu zaštitu useva.",
-    route: "/kategorija/Zaštita bilja",
-    iconDefault: protectionIconDefault,
-    iconActive: protectionIconActive,
+    description: "Preparati za pouzdanu i odgovornu zaštitu useva.",
+    route: "/podkategorija/Insekticidi",
+    icon: protectionIcon,
   },
   {
     label: "Ishrana bilja",
-    description: "Programi ishrane koji podržavaju zdrav razvoj i bolji prinos.",
-    route: "/kategorija/Ishrana bilja",
-    iconDefault: nutritionIconDefault,
-    iconActive: nutritionIconActive,
+    description: "Programi ishrane za zdrav rast i stabilan prinos.",
+    route: "/podkategorija/Kristalna vodootopiva đubriva",
+    icon: nutritionIcon,
   },
   {
-    label: "Semenska roba i sadnice",
-    description: "Odabrano seme, sadnice voća i ukrasnog bilja.",
-    route: "/kategorija/Seme i sadnice",
-    iconDefault: seedIconDefault,
-    iconActive: seedIconActive,
+    label: "Seme i sadnice",
+    description: "Proveren izbor za profesionalnu i hobi proizvodnju.",
+    route: "/podkategorija/Seme povrtarskih kultura",
+    icon: seedIcon,
   },
   {
-    label: "Pet program i hrana za životinje",
-    description: "Hrana, oprema i proizvodi za kućne ljubimce i domaće životinje.",
-    route: "/kategorija/Pet program",
-    iconDefault: petIconDefault,
-    iconActive: petIconActive,
-  },
-  {
-    label: "Garden oprema i alati",
-    description: "Oprema, alati i repromaterijal za uređen i negovan vrt.",
-    route: "/kategorija/Garden oprema i alati",
-    iconDefault: gardenIconDefault,
-    iconActive: gardenIconActive,
+    label: "Garden program",
+    description: "Alati, mašine i oprema za dvorište i imanje.",
+    route: "/podkategorija/Mašine",
+    icon: gardenIcon,
   },
 ];
 
@@ -289,41 +263,23 @@ export default function Home() {
             <p>Brži put do proizvoda prema poslu koji danas obavljate.</p>
           </header>
           <div className="shop-categories__grid">
-            {featuredCategories.map((category, index) => {
-              const content = (
-                <>
-                  <span className="shop-category-card__topline">
-                    <span className="shop-category-card__icon" aria-hidden="true">
-                      <img className="shop-category-card__icon-default" src={category.iconDefault} alt="" loading="lazy" decoding="async" />
-                      <img className="shop-category-card__icon-active" src={category.iconActive} alt="" loading="lazy" decoding="async" />
-                    </span>
-                    <span className="shop-category-card__number">{String(index + 1).padStart(2, "0")}</span>
-                  </span>
-                  <span className="shop-category-card__copy">
-                    <span className="shop-category-card__title">{category.label}</span>
-                    <span className="shop-category-card__text">{category.description}</span>
-                  </span>
-                  <span className="shop-category-card__action">
-                    {category.href ? "Saznajte više" : "Pogledajte ponudu"} <span aria-hidden="true">→</span>
-                  </span>
-                </>
-              );
-              return category.href ? (
-                <a key={category.label} className="shop-category-card" href={category.href} aria-label={`${category.label}: ${category.description}`}>
-                  {content}
-                </a>
-              ) : (
-                <button
-                  key={category.label}
-                  className="shop-category-card"
-                  type="button"
-                  onClick={() => navigate(category.route!)}
-                  aria-label={`${category.label}: ${category.description}`}
-                >
-                  {content}
-                </button>
-              );
-            })}
+            {featuredCategories.map((category) => (
+              <button
+                key={category.label}
+                className="shop-category-card"
+                type="button"
+                onClick={() => navigate(`/kategorija/${category.label === 'Garden program' ? 'Garden oprema i alati' : category.label}`)}
+              >
+                <span className="shop-category-card__icon">
+                  <img src={category.icon} alt="" loading="lazy" decoding="async" />
+                </span>
+                <span className="shop-category-card__copy">
+                  <strong>{category.label}</strong>
+                  <small>{category.description}</small>
+                </span>
+                <ArrowForwardIcon aria-hidden="true" />
+              </button>
+            ))}
           </div>
         </div>
       </section>
