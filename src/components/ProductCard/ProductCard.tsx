@@ -1,4 +1,4 @@
-import { type ProductOptions, availabilityLabels } from '../../data/productOptions';
+import { type ProductOptions, availabilityLabels, effectivePrice, packageHasDiscount, productHasDiscount } from '../../data/productOptions';
 import { useLayoutEffect, useRef, useState } from "react";
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
@@ -43,15 +43,17 @@ export default function ProductCard({
     setImageLoaded(Boolean(image?.complete && image.naturalWidth > 0));
   }, [imageSource]);
 
-  const hasDiscount = Boolean(
-    !product.packages?.length && product.onDiscount &&
-      product.discountPrice &&
-      product.discountPrice < product.price
-  );
-  const currentPrice = product.packages?.length ? Math.min(...product.packages.map((option) => option.price)) : hasDiscount ? product.discountPrice! : product.price;
-  const discountPercent = hasDiscount
-    ? Math.round(((product.price - currentPrice) / product.price) * 100)
-    : 0;
+  const hasDiscount = productHasDiscount(product);
+  const currentPrice = effectivePrice(product);
+  const discountBase = product.packages?.length
+    ? product.packages.filter(packageHasDiscount).reduce<{ regular: number; percent: number } | null>((best, option) => {
+        const percent = (option.price - option.discountPrice!) / option.price;
+        return !best || percent > best.percent ? { regular: option.price, percent } : best;
+      }, null)
+    : hasDiscount
+      ? { regular: product.price, percent: (product.price - product.discountPrice!) / product.price }
+      : null;
+  const discountPercent = discountBase ? Math.round(discountBase.percent * 100) : 0;
 
   const handleImageError = (event: React.SyntheticEvent<HTMLImageElement>) => {
     event.currentTarget.onerror = null;
@@ -105,7 +107,7 @@ export default function ProductCard({
 
         <div className="catalog-card__footer">
           <div className="catalog-card__price">
-            {hasDiscount && <del>{formatPrice(product.price)} RSD</del>}
+            {hasDiscount && discountBase && <del>{formatPrice(discountBase.regular)} RSD</del>}
             <strong>{product.packages?.length ? "Od " : ""}{formatPrice(currentPrice)} RSD</strong>
           </div>
           <button

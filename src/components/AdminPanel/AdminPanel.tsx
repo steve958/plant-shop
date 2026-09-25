@@ -1,4 +1,4 @@
-import { type ProductOptions, availabilityLabels } from '../../data/productOptions';
+import { type ProductOptions, availabilityLabels, effectivePrice, packageHasDiscount, productHasDiscount } from '../../data/productOptions';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -143,8 +143,8 @@ export default function AdminPanel() {
     if (subcategoryFilter) data = data.filter((product) => product.subcategory === subcategoryFilter);
     if (statusFilter === 'archived') data = data.filter((product) => product.archived);
     if (statusFilter === 'active') data = data.filter((product) => !product.archived);
-    if (statusFilter === 'regular') data = data.filter((product) => !product.onDiscount);
-    if (statusFilter === 'discount') data = data.filter((product) => product.onDiscount);
+    if (statusFilter === 'regular') data = data.filter((product) => !productHasDiscount(product));
+    if (statusFilter === 'discount') data = data.filter((product) => productHasDiscount(product));
     if (statusFilter === 'missingImage') data = data.filter((product) => !product.images?.length);
 
     return [...data].sort((a, b) => {
@@ -232,7 +232,7 @@ export default function AdminPanel() {
 
   const stats = {
     total: products.length,
-    discounts: products.filter((product) => product.onDiscount).length,
+    discounts: products.filter((product) => productHasDiscount(product)).length,
     brands: availableManufacturers.length,
     missingImages: products.filter((product) => !product.images?.length).length,
   };
@@ -306,8 +306,8 @@ export default function AdminPanel() {
                   <tr key={product.productId} className={previewMode ? '' : 'product-row'} onClick={() => !previewMode && setSelectedProduct(product)}>
                     <td><div className="admin-product-cell"><img src={product.images?.[0] || productPlaceholder} alt="" loading="lazy" decoding="async" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} /><div><strong>{product.name}</strong><span>{product.manufacturer || 'Bez proizvođača'}{product.packaging ? ` · ${product.packaging}` : ''}</span></div></div></td>
                     <td><strong className="admin-category">{product.category || '—'}</strong><span className="admin-subcategory">{product.subcategory || 'Bez podkategorije'}</span></td>
-                    <td><strong className="admin-price">{formatPrice(product.onDiscount && product.discountPrice ? product.discountPrice : product.price)}</strong>{product.onDiscount && product.discountPrice ? <del>{formatPrice(product.price)}</del> : null}</td>
-                    <td>{product.archived ? <span className="admin-badge">Arhiviran</span> : <span className="admin-badge">{availabilityLabels[product.availability || 'on_order']}</span>}{product.onDiscount ? <span className="admin-badge admin-badge-sale">Akcija</span> : <span className="admin-badge">Redovna cena</span>}</td>
+                    <td><strong className="admin-price">{formatPrice(effectivePrice(product))}</strong>{productHasDiscount(product) ? <del>{formatPrice(product.packages?.length ? Math.min(...product.packages.filter(packageHasDiscount).map((option) => option.price)) : product.price)}</del> : null}</td>
+                    <td>{product.archived ? <span className="admin-badge">Arhiviran</span> : <span className="admin-badge">{availabilityLabels[product.availability || 'on_order']}</span>}{productHasDiscount(product) ? <span className="admin-badge admin-badge-sale">Akcija</span> : <span className="admin-badge">Redovna cena</span>}</td>
                     <td onClick={(event) => event.stopPropagation()}><div className="admin-thumbnails">{(product.images || []).slice(0, 4).map((image, index) => <button key={`${image}-${index}`} title={previewMode ? 'Pregled je samo za čitanje' : 'Postavi kao glavnu fotografiju'} disabled={previewMode} onClick={() => handleImageSelect(product, index)}><img src={image} alt={`${product.name} ${index + 1}`} loading="lazy" decoding="async" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productPlaceholder; }} /></button>)}{!product.images?.length && <span className="admin-no-image">Nema slika</span>}</div></td>
                     <td onClick={(event) => event.stopPropagation()}><div className="admin-row-actions"><button className="admin-duplicate-button" title={previewMode ? 'Pregled je samo za čitanje' : 'Dupliciraj za drugo pakovanje'} disabled={previewMode} onClick={() => setDuplicateProduct(product)} aria-label={`Dupliciraj ${product.name}`}><ContentCopyOutlinedIcon /></button><button className="admin-delete-button" title={previewMode ? 'Pregled je samo za čitanje' : 'Obriši proizvod'} disabled={previewMode} onClick={() => setDeleteTarget({ productId: product.productId, images: product.images || [] })} aria-label={`Obriši ${product.name}`}><DeleteOutlineIcon /></button></div></td>
                   </tr>

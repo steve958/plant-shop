@@ -1,4 +1,4 @@
-import { type ProductOptions } from '../../data/productOptions';
+import { type ProductOptions, effectivePrice, productHasDiscount } from '../../data/productOptions';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { useDispatch, useSelector } from "react-redux";
@@ -108,7 +108,7 @@ export default function Home() {
   }, [isSearching, navigationType]);
 
   const searchedCatalogue = useMemo(
-    () => isSearching ? products : products.filter((product) => product.onDiscount),
+    () => isSearching ? products : products.filter((product) => productHasDiscount(product)),
     [isSearching, products]
   );
 
@@ -137,10 +137,7 @@ export default function Home() {
       return matchesSearch && matchesManufacturer;
     });
 
-    const getEffectivePrice = (product: Product) =>
-      product.onDiscount && product.discountPrice
-        ? product.discountPrice
-        : product.price;
+    const getEffectivePrice = (product: Product) => effectivePrice(product);
 
     return [...filteredProducts].sort((first, second) => {
       switch (sortBy) {
@@ -157,7 +154,7 @@ export default function Home() {
   }, [searchedCatalogue, searchQuery, manufacturerFilter, sortBy]);
 
   const seasonalProducts = useMemo(
-    () => products.filter((product) => !product.onDiscount).slice(0, 8),
+    () => products.filter((product) => !productHasDiscount(product)).slice(0, 8),
     [products]
   );
 
@@ -181,10 +178,7 @@ export default function Home() {
         productId: product.productId,
         name: product.name + (product.packaging ? ` · ${product.packaging}` : ""),
         image: product.images?.[0] || "",
-        price:
-          product.onDiscount && product.discountPrice
-            ? product.discountPrice
-            : product.price,
+        price: effectivePrice(product),
         quantity: 1,
       })
     );

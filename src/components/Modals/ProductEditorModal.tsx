@@ -1,4 +1,4 @@
-import { type Availability, type PackageOption, type ProductOptions, availabilityLabels } from '../../data/productOptions';
+import { type Availability, type PackageOption, type ProductOptions, availabilityLabels, effectivePackagePrice, packageHasDiscount } from '../../data/productOptions';
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { addDoc, collection, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
@@ -135,7 +135,7 @@ export default function ProductEditorModal({ product, duplicate = false, protect
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    const regularPrice = packages.length ? Math.min(...packages.map((option) => option.price)) : normalizePrice(price);
+    const regularPrice = packages.length ? Math.min(...packages.map(effectivePackagePrice)) : normalizePrice(price);
     const salePrice = normalizePrice(discountPrice);
     if (!category || !subcategory) {
       toast.error('Izaberite kategoriju i podkategoriju.');
@@ -161,6 +161,9 @@ export default function ProductEditorModal({ product, duplicate = false, protect
     if (packages.some((option) => !option.label.trim() || !Number.isFinite(option.price) || option.price <= 0) || new Set(packages.map((option) => option.label.trim().toLowerCase())).size !== packages.length) {
       toast.error('Svako pakovanje mora imati jedinstven naziv i cenu veću od nule.'); return;
     }
+    if (packages.some((option) => option.discountPrice !== undefined && (!Number.isFinite(option.discountPrice) || option.discountPrice <= 0 || option.discountPrice >= option.price))) {
+      toast.error('Akcijska cena pakovanja mora biti veća od nule i niža od redovne cene pakovanja.'); return;
+    }
     setLoading(true);
     try {
       const existingImages = previews.filter((preview) => preview.existing).map((preview) => preview.url);
@@ -176,7 +179,11 @@ export default function ProductEditorModal({ product, duplicate = false, protect
       }
 
       const savedProductData = {
-        archived, availability, packages: packages.map((option) => ({ ...option, label: option.label.trim() })),
+        archived, availability, packages: packages.map((option) => {
+          const entry: PackageOption = { id: option.id, label: option.label.trim(), price: option.price, availability: option.availability };
+          if (packageHasDiscount(option)) entry.discountPrice = option.discountPrice!;
+          return entry;
+        }),
         name: name.trim(),
         category,
         subcategory,
@@ -228,12 +235,13 @@ export default function ProductEditorModal({ product, duplicate = false, protect
 
         <div className="product-editor__body">
           <section className="product-editor__section">
-            <div className="product-editor__section-heading"><strong>Dostupnost i pakovanja</strong><span>Pakovanja imaju svoje cene; akcijska cena ispod važi za artikle bez dodatnih pakovanja.</span></div>
+            <div className="product-editor__section-heading"><strong>Dostupnost i pakovanja</strong><span>Pakovanja imaju svoje cene; svako pakovanje može imati posebnu akcijsku cenu.</span></div>
             <label className="product-editor__field"><span>Dostupnost artikla</span><select value={availability} onChange={(event) => setAvailability(event.target.value as Availability)}>{Object.entries(availabilityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
             <label><input type="checkbox" checked={archived} onChange={(event) => setArchived(event.target.checked)} /> Arhiviraj artikal — sakrij iz prodavnice</label>
             {packages.map((option, index) => <div className="package-editor-row" key={option.id}>
               <label className="product-editor__field"><span>Pakovanje</span><input required value={option.label} onChange={(event) => setPackages(packages.map((entry, i) => i === index ? { ...entry, label: event.target.value } : entry))} /></label>
               <label className="product-editor__field"><span>Cena (RSD)</span><input required type="number" min="0.01" step="0.01" value={option.price || ''} onChange={(event) => setPackages(packages.map((entry, i) => i === index ? { ...entry, price: Number(event.target.value) } : entry))} /></label>
+              <label className="product-editor__field"><span>Akcijska cena (RSD)</span><input type="number" min="0.01" step="0.01" value={option.discountPrice || ''} placeholder="Bez akcije" onWheel={(event) => event.currentTarget.blur()} onChange={(event) => setPackages(packages.map((entry, i) => i === index ? { ...entry, discountPrice: event.target.value === '' ? undefined : Number(event.target.value) } : entry))} /></label>
               <label className="product-editor__field"><span>Dostupnost</span><select value={option.availability} onChange={(event) => setPackages(packages.map((entry, i) => i === index ? { ...entry, availability: event.target.value as Availability } : entry))}>{Object.entries(availabilityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
               <button type="button" onClick={() => setPackages(packages.filter((entry) => entry.id !== option.id))}>Ukloni pakovanje</button>
             </div>)}

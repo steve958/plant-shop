@@ -1,4 +1,4 @@
-import { cartKey } from '../../data/productOptions';
+import { cartKey, effectivePackagePrice, type PackageOption } from '../../data/productOptions';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
@@ -54,8 +54,8 @@ const Order = () => {
         const snapshot = await getDoc(doc(db, 'products', item.productId));
         const product = snapshot.data();
         const packageId = 'packageId' in item ? item.packageId : '';
-        const selected = packageId ? product?.packages?.find((option: { id: string }) => option.id === packageId) : null;
-        const currentPrice = selected?.price ?? (product?.onDiscount && product.discountPrice ? product.discountPrice : product?.price);
+        const selected = packageId ? product?.packages?.find((option: PackageOption) => option.id === packageId) as PackageOption | undefined : null;
+        const currentPrice = selected ? effectivePackagePrice(selected) : (product?.onDiscount && product.discountPrice ? product.discountPrice : product?.price);
         if (!product || product.archived || (packageId && !selected) || (!packageId && product.packages?.length) || (selected?.availability || product.availability) === 'out_of_stock' || currentPrice !== item.price) {
           toast.error(`Ponuda za „${item.name}“ je promenjena. Uklonite stavku iz korpe i ponovo izaberite artikal i pakovanje.`);
           setSubmitting(false); return;

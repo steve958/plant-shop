@@ -1,4 +1,4 @@
-import { type ProductOptions } from '../../data/productOptions';
+import { type ProductOptions, effectivePrice } from '../../data/productOptions';
 import "./SubCategoryStyle.css";
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { db } from "../firebase";
@@ -110,10 +110,10 @@ export default function SubCategoryPage() {
                 sorted.sort((a, b) => b.name.localeCompare(a.name));
                 break;
             case "priceAsc":
-                sorted.sort((a, b) => a.price - b.price);
+                sorted.sort((a, b) => effectivePrice(a) - effectivePrice(b));
                 break;
             case "priceDesc":
-                sorted.sort((a, b) => b.price - a.price);
+                sorted.sort((a, b) => effectivePrice(b) - effectivePrice(a));
                 break;
             default: // "nameAsc"
                 sorted.sort((a, b) => a.name.localeCompare(b.name));
@@ -144,9 +144,7 @@ export default function SubCategoryPage() {
             productId: product.productId,
             name: product.name + (product.packaging ? ` · ${product.packaging}` : ""),
             image: product.images?.[0] || "",
-            price: product.onDiscount && product.discountPrice
-                ? product.discountPrice
-                : product.price,
+            price: effectivePrice(product),
             quantity: 1,
         }));
         toast.success("Proizvod je dodat u korpu.");

@@ -1,4 +1,4 @@
-import { type ProductOptions, availabilityLabels } from '../../data/productOptions';
+import { type ProductOptions, availabilityLabels, effectivePackagePrice, packageHasDiscount } from '../../data/productOptions';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
@@ -79,7 +79,7 @@ export default function ItemDetails() {
 
   const selectedPackage = product?.packages?.find((option) => option.id === packageId);
   const availability = selectedPackage?.availability || product?.availability || 'on_order';
-  const sellingPrice = selectedPackage?.price ?? (product?.onDiscount && product.discountPrice ? product.discountPrice : product?.price || 0);
+  const sellingPrice = selectedPackage ? effectivePackagePrice(selectedPackage) : (product?.onDiscount && product.discountPrice ? product.discountPrice : product?.price || 0);
   const handleAddToCart = () => {
     if (!product || availability === 'out_of_stock') return;
 
@@ -123,10 +123,10 @@ export default function ItemDetails() {
                 <span role="status">{availabilityLabels[availability]}</span>
               </div>
               <h1 className="product-title">{product.name}</h1>
-              {!!product.packages?.length && <label className="package-selector">Izaberite pakovanje<select value={packageId} onChange={(event) => { setPackageId(event.target.value); setQuantity(1); }}>{product.packages.map((option) => <option key={option.id} value={option.id}>{option.label} — {formatPrice(option.price)} · {availabilityLabels[option.availability]}</option>)}</select></label>}
+              {!!product.packages?.length && <label className="package-selector">Izaberite pakovanje<select value={packageId} onChange={(event) => { setPackageId(event.target.value); setQuantity(1); }}>{product.packages.map((option) => <option key={option.id} value={option.id}>{option.label} — {formatPrice(effectivePackagePrice(option))}{packageHasDiscount(option) ? ` (stara cena ${formatPrice(option.price)})` : ''} · {availabilityLabels[option.availability]}</option>)}</select></label>}
               <div className="product-price-block">
                 <p className="product-price">{formatPrice(sellingPrice)}</p>
-                {!selectedPackage && product.onDiscount && product.discountPrice ? <><del>{formatPrice(product.price)}</del><span>Ušteda {formatPrice(product.price - product.discountPrice)}</span></> : null}
+                {selectedPackage && packageHasDiscount(selectedPackage) ? <><del>{formatPrice(selectedPackage.price)}</del><span>Ušteda {formatPrice(selectedPackage.price - selectedPackage.discountPrice!)}</span></> : !selectedPackage && product.onDiscount && product.discountPrice ? <><del>{formatPrice(product.price)}</del><span>Ušteda {formatPrice(product.price - product.discountPrice)}</span></> : null}
               </div>
               <dl className="product-facts">
                 {product.category && <div><dt>Kategorija</dt><dd>{product.category}</dd></div>}
