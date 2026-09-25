@@ -1,9 +1,12 @@
-import { type PackageOption, type ProductOptions, availabilityLabels, effectivePackagePrice, packageHasDiscount } from '../../data/productOptions';
+import { type PackageOption, type ProductOptions, availabilityLabels, effectivePackagePrice, isOrderable, packageHasDiscount } from '../../data/productOptions';
+import { shopContact } from '../../data/shopContact';
 import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { useDispatch } from 'react-redux';
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
+import MailOutlineIcon from '@mui/icons-material/MailOutline';
+import PhoneInTalkOutlinedIcon from '@mui/icons-material/PhoneInTalkOutlined';
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
 import SupportAgentOutlinedIcon from '@mui/icons-material/SupportAgentOutlined';
 import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined';
@@ -84,7 +87,7 @@ export default function ItemDetails() {
   const availability = selectedPackage?.availability || product?.availability || 'on_order';
   const sellingPrice = selectedPackage ? effectivePackagePrice(selectedPackage) : (product?.onDiscount && product.discountPrice ? product.discountPrice : product?.price || 0);
   const handleAddToCart = () => {
-    if (!product || availability === 'out_of_stock') return;
+    if (!product || !isOrderable(availability)) return;
 
     dispatch(addToCart({
       productId: product.productId,
@@ -138,6 +141,16 @@ export default function ItemDetails() {
                 {!selectedPackage && product.packaging && <div><dt>Pakovanje</dt><dd>{product.packaging}</dd></div>}
               </dl>
 
+              {availability === 'on_order' ? (
+                <div className="product-inquiry" role="note">
+                  <strong>Ovaj artikal je dostupan na upit</strong>
+                  <p>Kontaktirajte nas za cenu, rok isporuke i dostupnost{selectedPackage ? ` pakovanja ${selectedPackage.label}` : ''}.</p>
+                  <div className="product-inquiry__links">
+                    <a href={shopContact.phoneHref}><PhoneInTalkOutlinedIcon aria-hidden="true" />{shopContact.phone}</a>
+                    <a href={`mailto:${shopContact.email}?subject=${encodeURIComponent(`Upit: ${product.name}${selectedPackage ? ` · ${selectedPackage.label}` : ''}`)}`}><MailOutlineIcon aria-hidden="true" />{shopContact.email}</a>
+                  </div>
+                </div>
+              ) : <>
               <div className="quantity-actions">
                 <label htmlFor="product-quantity">Količina</label>
                 <div className="quantity-input-wrapper">
@@ -146,7 +159,8 @@ export default function ItemDetails() {
                   <button type="button" className="qty-btn" onClick={() => setQuantity(quantity + 1)} aria-label="Povećaj količinu">+</button>
                 </div>
               </div>
-              <button disabled={availability === 'out_of_stock'} className="add-to-cart-button" onClick={handleAddToCart}><ShoppingBagOutlinedIcon /> Dodaj u korpu</button>
+              <button disabled={!isOrderable(availability)} className="add-to-cart-button" onClick={handleAddToCart}><ShoppingBagOutlinedIcon /> {isOrderable(availability) ? 'Dodaj u korpu' : 'Nema na stanju'}</button>
+              </>}
               <div className="product-service-notes">
                 <span><VerifiedOutlinedIcon />Proverena ponuda</span>
                 <span><SupportAgentOutlinedIcon />Stručna podrška</span>

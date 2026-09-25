@@ -14,7 +14,8 @@ type AdminOrder = {
   orderNumber: string;
   customer: { name: string; surname: string; email: string; phone: string; place: string; postalCode: string; street: string; number: string };
   items: { productId: string; name: string; image: string; price: number; quantity: number; lineTotal: number }[];
-  totals: { subtotal: number; delivery: number; total: number };
+  // delivery is null on orders placed after delivery pricing moved to per-order agreement.
+  totals: { subtotal: number; delivery: number | null; total: number };
   customerNote?: string;
   status: OrderStatus;
   createdAt?: Timestamp | Date | null;
@@ -99,7 +100,7 @@ export default function AdminOrders({ previewMode }: { previewMode: boolean }) {
         <section><h3>Kupac i dostava</h3><strong>{selectedOrder.customer.name} {selectedOrder.customer.surname}</strong><p>{selectedOrder.customer.street} {selectedOrder.customer.number}<br />{selectedOrder.customer.postalCode} {selectedOrder.customer.place}</p><div className="admin-order-contact-actions"><a href={`tel:${selectedOrder.customer.phone}`}><PhoneOutlinedIcon />{selectedOrder.customer.phone}</a><a href={`mailto:${selectedOrder.customer.email}`}><MailOutlineIcon />Email</a></div></section>
         {selectedOrder.customerNote && <section><h3>Napomena kupca</h3><p>{selectedOrder.customerNote}</p></section>}
         <section><h3>Proizvodi</h3><div className="admin-order-lines">{selectedOrder.items.map((item) => <article key={item.productId}><img src={item.image || productPlaceholder} alt="" loading="lazy" decoding="async" /><div><strong>{item.name}</strong><span>{item.quantity} × {formatPrice(item.price)}</span></div><b>{formatPrice(item.lineTotal)}</b></article>)}</div></section>
-        <section className="admin-order-totals"><div><span>Proizvodi</span><strong>{formatPrice(selectedOrder.totals.subtotal)}</strong></div><div><span>Dostava</span><strong>{formatPrice(selectedOrder.totals.delivery)}</strong></div><div><span>Ukupno</span><strong>{formatPrice(selectedOrder.totals.total)}</strong></div></section>
+        <section className="admin-order-totals"><div><span>Proizvodi</span><strong>{formatPrice(selectedOrder.totals.subtotal)}</strong></div><div><span>Dostava</span><strong>{typeof selectedOrder.totals.delivery === 'number' ? formatPrice(selectedOrder.totals.delivery) : 'Po dogovoru'}</strong></div><div><span>{typeof selectedOrder.totals.delivery === 'number' ? 'Ukupno' : 'Ukupno bez dostave'}</span><strong>{formatPrice(selectedOrder.totals.total)}</strong></div></section>
         <footer><button disabled={previewMode || updating || selectedOrder.status === 'contacted'} onClick={() => setOrderStatus(selectedOrder, 'contacted')}>Označi kontaktirano</button><button className="complete" disabled={previewMode || updating || selectedOrder.status === 'completed'} onClick={() => setOrderStatus(selectedOrder, 'completed')}>Završi porudžbinu</button><button className="cancel" disabled={previewMode || updating || selectedOrder.status === 'cancelled'} onClick={() => setOrderStatus(selectedOrder, 'cancelled')}>Otkaži</button></footer>
       </aside></div>}
     </section>

@@ -4,6 +4,8 @@ export type ProductOptions = { archived?: boolean; seasonal?: boolean; availabil
 export const availabilityLabels: Record<Availability, string> = {
   in_stock: 'Na stanju', on_order: 'Na upit', out_of_stock: 'Nema na stanju',
 };
+// Only in-stock articles can be ordered online; "Na upit" articles are requested by phone or email.
+export const isOrderable = (availability: Availability | undefined) => availability === 'in_stock';
 export const cartKey = (item: { productId: string; packageId?: string }) =>
   JSON.stringify([item.productId, item.packageId || '']);
 

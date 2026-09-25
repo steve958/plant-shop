@@ -1,5 +1,6 @@
-import { type PackageOption, type ProductOptions, availabilityLabels, effectivePackagePrice, effectivePrice, packageHasDiscount, productHasDiscount } from '../../data/productOptions';
+import { type PackageOption, type ProductOptions, availabilityLabels, effectivePackagePrice, effectivePrice, isOrderable, packageHasDiscount, productHasDiscount } from '../../data/productOptions';
 import { useLayoutEffect, useRef, useState } from "react";
+import PhoneInTalkOutlinedIcon from "@mui/icons-material/PhoneInTalkOutlined";
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import productPlaceholder from "../../assets/product-placeholder.svg";
@@ -114,15 +115,27 @@ export default function ProductCard({
             {hasDiscount && !multiPackage && <del>{formatPrice(regularPrice)} RSD</del>}
             <strong>{multiPackage ? "Od " : ""}{formatPrice(currentPrice)} RSD</strong>
           </div>
-          <button
-            className="catalog-card__cart"
-            type="button"
-            onClick={() => multiPackage ? openProduct() : onAddToCart?.(product.productId, packageOption?.id)}
-            disabled={!onAddToCart || (!multiPackage && availability === 'out_of_stock')}
-            aria-label={`Dodaj ${product.name} u korpu`}
-          >
-            <ShoppingBagOutlinedIcon aria-hidden="true" />
-          </button>
+          {!multiPackage && availability === 'on_order' ? (
+            <button
+              className="catalog-card__cart catalog-card__cart--inquiry"
+              type="button"
+              onClick={openProduct}
+              aria-label={`Pošaljite upit za ${product.name}`}
+              title="Na upit — kontaktirajte nas"
+            >
+              <PhoneInTalkOutlinedIcon aria-hidden="true" />
+            </button>
+          ) : (
+            <button
+              className="catalog-card__cart"
+              type="button"
+              onClick={() => multiPackage ? openProduct() : onAddToCart?.(product.productId, packageOption?.id)}
+              disabled={!onAddToCart || (!multiPackage && !isOrderable(availability))}
+              aria-label={`Dodaj ${product.name} u korpu`}
+            >
+              <ShoppingBagOutlinedIcon aria-hidden="true" />
+            </button>
+          )}
         </div>
       </div>
     </article>

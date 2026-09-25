@@ -1,4 +1,4 @@
-import { type ProductOptions, effectivePrice } from '../../data/productOptions';
+import { type ProductOptions, effectivePrice, isOrderable } from '../../data/productOptions';
 import "./SubCategoryStyle.css";
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { db } from "../firebase";
@@ -137,8 +137,8 @@ export default function SubCategoryPage() {
 
     const handleAddToCart = (productId: string) => {
         const product = products.find((item) => item.productId === productId);
-        if (!product || product.archived || product.availability === 'out_of_stock') return;
-        if (product.packages?.length) { navigate(`/proizvod/${productId}`); return; }
+        if (!product || product.archived) return;
+        if (product.packages?.length || !isOrderable(product.availability)) { navigate(`/proizvod/${productId}`); return; }
 
         dispatch(addToCart({
             productId: product.productId,

@@ -1,4 +1,5 @@
-import { cartKey, effectivePackagePrice, type PackageOption } from '../../data/productOptions';
+import { cartKey, effectivePackagePrice, isOrderable, type PackageOption } from '../../data/productOptions';
+import { shopContact } from '../../data/shopContact';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
@@ -39,8 +40,9 @@ const Order = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const delivery = items.length ? 350 : 0;
-  const total = subtotal + delivery;
+  // Delivery cost depends on the packages ordered; the admin confirms it with the customer.
+  const delivery = null;
+  const total = subtotal;
   const formatPrice = (price: number) => new Intl.NumberFormat('sr-RS', {
     style: 'currency', currency: 'RSD', minimumFractionDigits: 2, maximumFractionDigits: 2,
   }).format(price);
@@ -56,7 +58,11 @@ const Order = () => {
         const packageId = 'packageId' in item ? item.packageId : '';
         const selected = packageId ? product?.packages?.find((option: PackageOption) => option.id === packageId) as PackageOption | undefined : null;
         const currentPrice = selected ? effectivePackagePrice(selected) : (product?.onDiscount && product.discountPrice ? product.discountPrice : product?.price);
-        if (!product || product.archived || (packageId && !selected) || (!packageId && product.packages?.length) || (selected?.availability || product.availability) === 'out_of_stock' || currentPrice !== item.price) {
+        if (product && !product.archived && !(packageId && !selected) && !isOrderable(selected ? selected.availability : product.availability)) {
+          toast.error(`„${item.name}“ trenutno nije na stanju i ne može se poručiti online. Uklonite stavku iz korpe i kontaktirajte nas na ${shopContact.phone} ili ${shopContact.email}.`);
+          setSubmitting(false); return;
+        }
+        if (!product || product.archived || (packageId && !selected) || (!packageId && product.packages?.length) || currentPrice !== item.price) {
           toast.error(`Ponuda za „${item.name}“ je promenjena. Uklonite stavku iz korpe i ponovo izaberite artikal i pakovanje.`);
           setSubmitting(false); return;
         }
@@ -127,8 +133,9 @@ const Order = () => {
 
         <aside className="order-summary">
           <span className="order-eyebrow">Pregled iznosa</span>
-          <dl><div><dt>Proizvodi</dt><dd>{formatPrice(subtotal)}</dd></div><div><dt>Dostava</dt><dd>{formatPrice(delivery)}</dd></div></dl>
-          <div className="order-total"><span>Ukupno</span><strong>{formatPrice(total)}</strong></div>
+          <dl><div><dt>Proizvodi</dt><dd>{formatPrice(subtotal)}</dd></div><div><dt>Dostava</dt><dd>Po dogovoru</dd></div></dl>
+          <div className="order-total"><span>Ukupno bez dostave</span><strong>{formatPrice(total)}</strong></div>
+          <p className="order-contact-note">Cena dostave zavisi od pakovanja i potvrđuje se pri dogovoru.</p>
           <label className="order-consent"><input type="checkbox" disabled={checkoutPreview || submitting} {...register('privacyAccepted', { required: 'Potvrdite saglasnost za obradu podataka' })} /><span>Saglasan/na sam da Plant Centar koristi unete podatke za obradu ove porudžbine.</span></label>
           {errors.privacyAccepted && <span className="order-consent-error">{errors.privacyAccepted.message}</span>}
           <button className="order-primary" type="submit" disabled={submitting || checkoutPreview}>{checkoutPreview ? 'Pregled — čuvanje isključeno' : submitting ? 'Čuvamo porudžbinu...' : 'Pošalji porudžbinu'}</button>

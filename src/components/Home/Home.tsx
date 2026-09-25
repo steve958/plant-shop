@@ -1,4 +1,4 @@
-import { type PackageOption, type ProductOptions, discountedOffers, effectivePackagePrice, effectivePrice } from '../../data/productOptions';
+import { type PackageOption, type ProductOptions, discountedOffers, effectivePackagePrice, effectivePrice, isOrderable } from '../../data/productOptions';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { useDispatch, useSelector } from "react-redux";
@@ -180,7 +180,7 @@ export default function Home() {
     if (!product || product.archived) return;
     const selectedPackage = packageId ? product.packages?.find((option) => option.id === packageId) : undefined;
     if (selectedPackage) {
-      if (selectedPackage.availability === 'out_of_stock') return;
+      if (!isOrderable(selectedPackage.availability)) { openProduct(productId, selectedPackage.id); return; }
       dispatch(
         addToCart({
           productId: product.productId,
@@ -194,8 +194,7 @@ export default function Home() {
       toast.success("Proizvod je dodat u korpu.");
       return;
     }
-    if (product.packages?.length) { openProduct(productId); return; }
-    if (product.availability === 'out_of_stock') return;
+    if (product.packages?.length || !isOrderable(product.availability)) { openProduct(productId); return; }
 
     dispatch(
       addToCart({

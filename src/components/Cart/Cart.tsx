@@ -14,8 +14,8 @@ export default function Cart() {
   const cartItems = useSelector((state: RootState) => state.cart.items);
 
   const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
-  const deliveryCost = cartItems.length ? 350 : 0;
-  const finalTotal = subtotal + deliveryCost;
+  // Delivery cost depends on the packages ordered and is confirmed by the team.
+  const finalTotal = subtotal;
   const formatPrice = (price: number) => new Intl.NumberFormat('sr-RS', {
     style: 'currency', currency: 'RSD', minimumFractionDigits: 2, maximumFractionDigits: 2,
   }).format(price);
@@ -71,10 +71,10 @@ export default function Cart() {
 
         <aside className="cart-summary">
           <span className="cart-eyebrow">Sažetak</span><h2>Pregled porudžbine</h2>
-          <dl><div><dt>Vrednost proizvoda</dt><dd>{formatPrice(subtotal)}</dd></div><div><dt>Dostava</dt><dd>{formatPrice(deliveryCost)}</dd></div></dl>
-          <div className="cart-total"><span>Ukupno</span><strong>{formatPrice(finalTotal)}</strong><small>PDV je uračunat u cenu</small></div>
+          <dl><div><dt>Vrednost proizvoda</dt><dd>{formatPrice(subtotal)}</dd></div><div><dt>Dostava</dt><dd>Po dogovoru</dd></div></dl>
+          <div className="cart-total"><span>Ukupno bez dostave</span><strong>{formatPrice(finalTotal)}</strong><small>PDV je uračunat u cenu · cena dostave zavisi od pakovanja i potvrđuje se pri dogovoru</small></div>
           <button className="cart-primary-button" onClick={handleOrder}>Unesite podatke za dostavu</button>
-          <div className="cart-delivery"><LocalShippingOutlinedIcon /><span><strong>Dostava širom Srbije</strong>Rok i dostupnost potvrđuje naš tim.</span></div>
+          <div className="cart-delivery"><LocalShippingOutlinedIcon /><span><strong>Dostava širom Srbije</strong>Cenu dostave, rok i dostupnost potvrđuje naš tim.</span></div>
         </aside>
       </div>
     </main>

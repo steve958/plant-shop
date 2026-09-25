@@ -3,6 +3,7 @@ import InstagramIcon from "@mui/icons-material/Instagram";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { Link } from "react-router-dom";
 import PlantCentarLogo from "../../assets/plant-centar-logo-horizontalni.svg";
+import { shopContact } from "../../data/shopContact";
 import "./Footer.css";
 
 const Footer = () => {
@@ -40,8 +41,8 @@ const Footer = () => {
 
           <div className="shop-footer__column">
             <h3>Kontakt</h3>
-            <a href="mailto:plant.centar@gmail.com">plant.centar@gmail.com</a>
-            <a href="tel:+381604055510">+381 60 405 5510</a>
+            <a href={`mailto:${shopContact.email}`}>{shopContact.email}</a>
+            <a href={shopContact.phoneHref}>{shopContact.phone}</a>
             <p>Vojvode Janka Stojićevića 22<br />Šabac</p>
           </div>
 
