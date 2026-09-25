@@ -6,6 +6,7 @@ import { signOut } from 'firebase/auth';
 import { collection, deleteDoc, doc, getDocs, updateDoc } from 'firebase/firestore';
 import { deleteObject, ref } from 'firebase/storage';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import CloseIcon from '@mui/icons-material/Close';
 import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import FilterAltOutlinedIcon from '@mui/icons-material/FilterAltOutlined';
@@ -14,6 +15,7 @@ import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import SearchIcon from '@mui/icons-material/Search';
 import { Button, Dialog, DialogActions, DialogContent } from '@mui/material';
 import { ScaleLoader } from 'react-spinners';
 import { auth, db, storage } from '../firebase';
@@ -74,6 +76,7 @@ export default function AdminPanel() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [duplicateProduct, setDuplicateProduct] = useState<Product | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
+  const [catalogSearch, setCatalogSearch] = useState('');
   const [manufacturerFilter, setManufacturerFilter] = useState<string[]>([]);
   const [manufacturerFilterResetKey, setManufacturerFilterResetKey] = useState(0);
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -132,11 +135,13 @@ export default function AdminPanel() {
   }, [categoryFilter, products]);
 
   const filteredProducts = useMemo(() => {
-    const normalizedSearch = searchQuery.trim().toLocaleLowerCase('sr-Latn');
+    // Header search and the catalogue search box both apply; every word must match.
+    const terms = `${searchQuery} ${catalogSearch}`.trim().toLocaleLowerCase('sr-Latn').split(/\s+/).filter(Boolean);
     let data = products.filter((product) => {
-      if (!normalizedSearch) return true;
-      return [product.name, product.manufacturer, product.category, product.subcategory]
-        .some((value) => value?.toLocaleLowerCase('sr-Latn').includes(normalizedSearch));
+      if (!terms.length) return true;
+      const haystack = [product.name, product.manufacturer, product.category, product.subcategory, product.packaging, ...(product.packages || []).map((option) => option.label)]
+        .filter(Boolean).join(' ').toLocaleLowerCase('sr-Latn');
+      return terms.every((term) => haystack.includes(term));
     });
     if (manufacturerFilter.length) data = data.filter((product) => manufacturerFilter.includes(product.manufacturer));
     if (categoryFilter) data = data.filter((product) => product.category === categoryFilter);
@@ -153,7 +158,7 @@ export default function AdminPanel() {
       if (sortBy === 'nameDesc') return b.name.localeCompare(a.name, 'sr');
       return a.name.localeCompare(b.name, 'sr');
     });
-  }, [products, searchQuery, manufacturerFilter, categoryFilter, subcategoryFilter, statusFilter, sortBy]);
+  }, [products, searchQuery, catalogSearch, manufacturerFilter, categoryFilter, subcategoryFilter, statusFilter, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
   const paginatedProducts = useMemo(() => {
@@ -163,11 +168,11 @@ export default function AdminPanel() {
   const paginationItems = useMemo(() => getPaginationItems(currentPage, totalPages), [currentPage, totalPages]);
   const resultStart = filteredProducts.length ? (currentPage - 1) * pageSize + 1 : 0;
   const resultEnd = Math.min(currentPage * pageSize, filteredProducts.length);
-  const activeFilterCount = manufacturerFilter.length + Number(Boolean(categoryFilter)) + Number(Boolean(subcategoryFilter)) + Number(statusFilter !== 'all');
+  const activeFilterCount = Number(Boolean(catalogSearch.trim())) + manufacturerFilter.length +Number(Boolean(categoryFilter)) + Number(Boolean(subcategoryFilter)) + Number(statusFilter !== 'all');
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, manufacturerFilter, categoryFilter, subcategoryFilter, statusFilter, sortBy, pageSize]);
+  }, [searchQuery, catalogSearch, manufacturerFilter, categoryFilter, subcategoryFilter, statusFilter, sortBy, pageSize]);
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
@@ -182,6 +187,7 @@ export default function AdminPanel() {
   }).format(Number(price) || 0);
 
   const clearCatalogFilters = () => {
+    setCatalogSearch('');
     setManufacturerFilter([]);
     setManufacturerFilterResetKey((key) => key + 1);
     setCategoryFilter('');
@@ -285,6 +291,12 @@ export default function AdminPanel() {
         <aside className="admin-sidebar">
           <div className="admin-sidebar-heading"><strong>Prikaz kataloga</strong><span>{filteredProducts.length} rezultata</span></div>
           <div className="admin-sort-filter-wrapper">
+            <label className="admin-catalog-search">
+              <span className="sr-only">Pretraga artikala</span>
+              <SearchIcon aria-hidden="true" />
+              <input type="search" value={catalogSearch} onChange={(event) => setCatalogSearch(event.target.value)} placeholder="Pretraži naziv, proizvođača, pakovanje…" />
+              {catalogSearch && <button type="button" onClick={() => setCatalogSearch('')} aria-label="Obriši pretragu"><CloseIcon /></button>}
+            </label>
             <Sort onSortChange={setSortBy} />
             <section className="admin-catalog-filters" aria-label="Filteri kategorija i statusa">
               <div className="admin-filter-title"><span><FilterAltOutlinedIcon /> Dodatni filteri</span>{activeFilterCount > 0 && <strong>{activeFilterCount}</strong>}</div>
