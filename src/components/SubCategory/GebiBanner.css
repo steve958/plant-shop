@@ -1,0 +1,175 @@
+.gebi-banner {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    align-items: center;
+    gap: 32px;
+    overflow: hidden;
+    padding: 48px 0 48px 52px;
+    border: 1px solid var(--shop-line);
+    border-radius: 26px;
+    background:
+        radial-gradient(circle at 88% 30%, rgba(218, 41, 47, 0.1), transparent 42%),
+        radial-gradient(circle at 70% 95%, rgba(84, 193, 67, 0.12), transparent 40%),
+        linear-gradient(135deg, #fff 0%, #f7f9f3 100%);
+    box-shadow: 0 18px 44px rgba(31, 63, 42, 0.08);
+}
+
+.gebi-banner__copy {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.gebi-banner__partner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.gebi-banner__partner img {
+    width: 80px;
+    height: auto;
+}
+
+.gebi-banner__partner span {
+    color: #c62a2f;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.gebi-banner h2 {
+    margin: 0;
+    color: var(--shop-green-900);
+    font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+    font-weight: 650;
+    letter-spacing: -0.035em;
+    line-height: 1.08;
+}
+
+.gebi-banner p {
+    max-width: 560px;
+    margin: 0;
+    color: #4f5d53;
+    font-size: 0.92rem;
+    line-height: 1.75;
+}
+
+.gebi-banner p strong {
+    color: var(--shop-green-900);
+    white-space: nowrap;
+}
+
+.gebi-banner__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px 20px;
+    margin-top: 6px;
+}
+
+.gebi-banner__call {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 52px;
+    padding: 0 24px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--shop-green-500), var(--shop-green-700));
+    box-shadow: 0 12px 26px rgba(40, 123, 53, 0.22);
+    color: #fff;
+    font-size: 0.88rem;
+    font-weight: 750;
+    text-decoration: none;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.gebi-banner__call:hover,
+.gebi-banner__call:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 30px rgba(40, 123, 53, 0.28);
+}
+
+.gebi-banner__call:focus-visible {
+    outline: 3px solid rgba(84, 193, 67, 0.4);
+    outline-offset: 3px;
+}
+
+.gebi-banner__call svg { font-size: 21px; }
+
+.gebi-banner__store {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--shop-muted);
+    font-size: 0.78rem;
+    font-weight: 650;
+}
+
+.gebi-banner__store svg {
+    color: var(--shop-green-700);
+    font-size: 19px;
+}
+
+.gebi-banner__visual {
+    position: relative;
+    height: 400px;
+}
+
+.gebi-banner__bag {
+    position: absolute;
+    height: auto;
+    filter: drop-shadow(0 22px 26px rgba(20, 40, 28, 0.2));
+}
+
+.gebi-banner__bag--main {
+    top: -6px;
+    left: 4%;
+    width: min(330px, 62%);
+    transform: rotate(-4deg);
+}
+
+.gebi-banner__bag--side {
+    right: 6%;
+    bottom: -4px;
+    width: min(250px, 46%);
+    transform: rotate(5deg);
+}
+
+@media (max-width: 900px) {
+    .gebi-banner {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 36px 30px 0;
+    }
+
+    .gebi-banner__visual {
+        height: 320px;
+        max-width: 460px;
+        width: 100%;
+        margin: 0 auto;
+    }
+
+    .gebi-banner__bag--main { width: 230px; left: 6%; }
+    .gebi-banner__bag--side { width: 180px; right: 6%; }
+}
+
+@media (max-width: 520px) {
+    .gebi-banner {
+        padding: 28px 20px 0;
+        border-radius: 20px;
+    }
+
+    .gebi-banner__call {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .gebi-banner__visual { height: 250px; }
+    .gebi-banner__bag--main { width: 175px; left: 2%; }
+    .gebi-banner__bag--side { width: 140px; right: 2%; }
+}

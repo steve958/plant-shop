@@ -13,6 +13,10 @@ import { RootState } from "../Redux/store";
 import { addToCart } from "../Redux/cartSlice";
 import ProductCard from "../ProductCard/ProductCard";
 import Loader from "../Loader/Loader";
+import GebiBanner from "./GebiBanner";
+
+// Livestock feed is sold only in store or by phone, so this subcategory shows a partner banner instead of articles.
+const GEBI_SUBCATEGORY = "Hrana za domaće životinje";
 import { toast } from "react-toastify";
 
 type Product = ProductOptions & {
@@ -158,7 +162,9 @@ export default function SubCategoryPage() {
                 <h1>{category || subCategory}</h1>
                 <p>Provereni proizvodi uz stručnu podršku pri izboru i primeni.</p>
             </div>
-            {loading ? (
+            {subCategory === GEBI_SUBCATEGORY ? (
+                <GebiBanner />
+            ) : loading ? (
                 <Loader label="Učitavamo proizvode" />
             ) : (
                 <div className="sub-page-wrapper">
