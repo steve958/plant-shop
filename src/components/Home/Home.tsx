@@ -1,4 +1,4 @@
-import { type ProductOptions, effectivePrice, productHasDiscount } from '../../data/productOptions';
+import { type PackageOption, type ProductOptions, discountedOffers, effectivePackagePrice, effectivePrice } from '../../data/productOptions';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { useDispatch, useSelector } from "react-redux";
@@ -107,28 +107,31 @@ export default function Home() {
     return () => window.clearTimeout(timer);
   }, [isSearching, navigationType]);
 
+  // While browsing "Akcija", every discounted package is shown as its own article.
   const searchedCatalogue = useMemo(
-    () => isSearching ? products : products.filter((product) => productHasDiscount(product)),
+    () => isSearching
+      ? products.map((product) => ({ product, packageOption: undefined as PackageOption | undefined }))
+      : discountedOffers(products),
     [isSearching, products]
   );
 
   const availableManufacturers = useMemo(
     () =>
       Array.from(
-        new Set(searchedCatalogue.map((product) => product.manufacturer).filter(Boolean))
+        new Set(searchedCatalogue.map(({ product }) => product.manufacturer).filter(Boolean))
       ),
     [searchedCatalogue]
   );
 
   const sortedProducts = useMemo(() => {
     const normalizedSearch = searchQuery.trim().toLocaleLowerCase("sr-Latn");
-    const filteredProducts = searchedCatalogue.filter((product) => {
+    const filteredProducts = searchedCatalogue.filter(({ product, packageOption }) => {
       const matchesSearch = !normalizedSearch || [
         product.name,
         product.manufacturer,
         product.category,
         product.subcategory,
-        product.packaging,
+        packageOption?.label ?? product.packaging,
         product.description,
       ].some((value) => value?.toLocaleLowerCase("sr-Latn").includes(normalizedSearch));
       const matchesManufacturer =
@@ -137,24 +140,25 @@ export default function Home() {
       return matchesSearch && matchesManufacturer;
     });
 
-    const getEffectivePrice = (product: Product) => effectivePrice(product);
+    const getEffectivePrice = ({ product, packageOption }: (typeof filteredProducts)[number]) =>
+      packageOption ? effectivePackagePrice(packageOption) : effectivePrice(product);
 
     return [...filteredProducts].sort((first, second) => {
       switch (sortBy) {
         case "nameDesc":
-          return second.name.localeCompare(first.name);
+          return second.product.name.localeCompare(first.product.name) || getEffectivePrice(first) - getEffectivePrice(second);
         case "priceAsc":
           return getEffectivePrice(first) - getEffectivePrice(second);
         case "priceDesc":
           return getEffectivePrice(second) - getEffectivePrice(first);
         default:
-          return first.name.localeCompare(second.name);
+          return first.product.name.localeCompare(second.product.name) || getEffectivePrice(first) - getEffectivePrice(second);
       }
     });
   }, [searchedCatalogue, searchQuery, manufacturerFilter, sortBy]);
 
   const seasonalProducts = useMemo(
-    () => products.filter((product) => !productHasDiscount(product)).slice(0, 8),
+    () => products.filter((product) => product.seasonal),
     [products]
   );
 
@@ -168,10 +172,30 @@ export default function Home() {
     return [...products].sort((first, second) => createdAtMillis(second) - createdAtMillis(first)).slice(0, 8);
   }, [products]);
 
-  const handleAddToCart = (productId: string) => {
+  const openProduct = (productId: string, packageId?: string) =>
+    navigate(`/proizvod/${productId}${packageId ? `?pakovanje=${encodeURIComponent(packageId)}` : ""}`);
+
+  const handleAddToCart = (productId: string, packageId?: string) => {
     const product = products.find((item) => item.productId === productId);
-    if (!product || product.archived || product.availability === 'out_of_stock') return;
-        if (product.packages?.length) { navigate(`/proizvod/${productId}`); return; }
+    if (!product || product.archived) return;
+    const selectedPackage = packageId ? product.packages?.find((option) => option.id === packageId) : undefined;
+    if (selectedPackage) {
+      if (selectedPackage.availability === 'out_of_stock') return;
+      dispatch(
+        addToCart({
+          productId: product.productId,
+          packageId: selectedPackage.id,
+          name: `${product.name} · ${selectedPackage.label}`,
+          image: product.images?.[0] || "",
+          price: effectivePackagePrice(selectedPackage),
+          quantity: 1,
+        })
+      );
+      toast.success("Proizvod je dodat u korpu.");
+      return;
+    }
+    if (product.packages?.length) { openProduct(productId); return; }
+    if (product.availability === 'out_of_stock') return;
 
     dispatch(
       addToCart({
@@ -290,11 +314,12 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="home-products-grid">
-                  {sortedProducts.map((product) => (
+                  {sortedProducts.map(({ product, packageOption }) => (
                     <ProductCard
-                      key={product.productId}
+                      key={`${product.productId}-${packageOption?.id ?? ""}`}
                       product={product}
-                      onClick={(productId) => navigate(`/proizvod/${productId}`)}
+                      packageOption={packageOption}
+                      onClick={openProduct}
                       onAddToCart={handleAddToCart}
                     />
                   ))}

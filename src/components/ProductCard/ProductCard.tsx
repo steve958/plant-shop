@@ -1,4 +1,4 @@
-import { type ProductOptions, availabilityLabels, effectivePrice, packageHasDiscount, productHasDiscount } from '../../data/productOptions';
+import { type PackageOption, type ProductOptions, availabilityLabels, effectivePackagePrice, effectivePrice, packageHasDiscount, productHasDiscount } from '../../data/productOptions';
 import { useLayoutEffect, useRef, useState } from "react";
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
@@ -19,8 +19,10 @@ type Product = ProductOptions & {
 
 interface ProductCardProps {
   product: Product;
-  onClick: (productId: string) => void;
-  onAddToCart?: (productId: string) => void;
+  /** When set, the card represents this single package of the product. */
+  packageOption?: PackageOption;
+  onClick: (productId: string, packageId?: string) => void;
+  onAddToCart?: (productId: string, packageId?: string) => void;
 }
 
 const formatPrice = (price: number) =>
@@ -31,6 +33,7 @@ const formatPrice = (price: number) =>
 
 export default function ProductCard({
   product,
+  packageOption,
   onClick,
   onAddToCart,
 }: ProductCardProps) {
@@ -43,17 +46,18 @@ export default function ProductCard({
     setImageLoaded(Boolean(image?.complete && image.naturalWidth > 0));
   }, [imageSource]);
 
-  const hasDiscount = productHasDiscount(product);
-  const currentPrice = effectivePrice(product);
-  const discountBase = product.packages?.length
-    ? product.packages.filter(packageHasDiscount).reduce<{ regular: number; percent: number } | null>((best, option) => {
-        const percent = (option.price - option.discountPrice!) / option.price;
-        return !best || percent > best.percent ? { regular: option.price, percent } : best;
-      }, null)
-    : hasDiscount
-      ? { regular: product.price, percent: (product.price - product.discountPrice!) / product.price }
-      : null;
-  const discountPercent = discountBase ? Math.round(discountBase.percent * 100) : 0;
+  const multiPackage = !packageOption && Boolean(product.packages?.length);
+  const hasDiscount = packageOption ? packageHasDiscount(packageOption) : productHasDiscount(product);
+  const currentPrice = packageOption ? effectivePackagePrice(packageOption) : effectivePrice(product);
+  const regularPrice = packageOption ? packageOption.price : product.price;
+  const discountPercent = !hasDiscount
+    ? 0
+    : multiPackage
+      ? Math.round(Math.max(...product.packages!.filter(packageHasDiscount).map((option) => (option.price - option.discountPrice!) / option.price)) * 100)
+      : Math.round(((regularPrice - currentPrice) / regularPrice) * 100);
+  const availability = packageOption?.availability || product.availability || 'on_order';
+  const packagingLabel = packageOption?.label || product.packaging;
+  const openProduct = () => onClick(product.productId, packageOption?.id);
 
   const handleImageError = (event: React.SyntheticEvent<HTMLImageElement>) => {
     event.currentTarget.onerror = null;
@@ -65,11 +69,11 @@ export default function ProductCard({
       <button
         className={`catalog-card__media ${imageLoaded ? "catalog-card__media--loaded" : ""}`}
         type="button"
-        onClick={() => onClick(product.productId)}
+        onClick={openProduct}
         aria-label={`Pogledaj proizvod ${product.name}`}
       >
         {hasDiscount && (
-          <span className="catalog-card__badge">−{discountPercent}%</span>
+          <span className="catalog-card__badge">{multiPackage ? "do " : ""}−{discountPercent}%</span>
         )}
         <img
           ref={imageRef}
@@ -92,11 +96,11 @@ export default function ProductCard({
           <span className="catalog-card__brand">
             {product.manufacturer || "Plant Centar preporuka"}
           </span>
-          {product.packaging && <span className="catalog-card__packaging">{product.packaging}</span>}
+          {packagingLabel && <span className="catalog-card__packaging">{packagingLabel}</span>}
         </div>
-        <small>{product.packages?.length ? `${product.packages.length} pakovanja · Izaberite pakovanje` : availabilityLabels[product.availability || 'on_order']}</small>
+        <small>{multiPackage ? `${product.packages!.length} pakovanja · Izaberite pakovanje` : availabilityLabels[availability]}</small>
         <h3>
-          <button type="button" onClick={() => onClick(product.productId)}>
+          <button type="button" onClick={openProduct}>
             {product.name}
           </button>
         </h3>
@@ -107,14 +111,14 @@ export default function ProductCard({
 
         <div className="catalog-card__footer">
           <div className="catalog-card__price">
-            {hasDiscount && discountBase && <del>{formatPrice(discountBase.regular)} RSD</del>}
-            <strong>{product.packages?.length ? "Od " : ""}{formatPrice(currentPrice)} RSD</strong>
+            {hasDiscount && !multiPackage && <del>{formatPrice(regularPrice)} RSD</del>}
+            <strong>{multiPackage ? "Od " : ""}{formatPrice(currentPrice)} RSD</strong>
           </div>
           <button
             className="catalog-card__cart"
             type="button"
-            onClick={() => product.packages?.length ? onClick(product.productId) : onAddToCart?.(product.productId)}
-            disabled={!onAddToCart || (!product.packages?.length && product.availability === 'out_of_stock')}
+            onClick={() => multiPackage ? openProduct() : onAddToCart?.(product.productId, packageOption?.id)}
+            disabled={!onAddToCart || (!multiPackage && availability === 'out_of_stock')}
             aria-label={`Dodaj ${product.name} u korpu`}
           >
             <ShoppingBagOutlinedIcon aria-hidden="true" />

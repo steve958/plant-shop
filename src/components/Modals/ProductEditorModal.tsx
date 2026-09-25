@@ -1,4 +1,4 @@
-import { type Availability, type PackageOption, type ProductOptions, availabilityLabels, effectivePackagePrice, packageHasDiscount } from '../../data/productOptions';
+import { type Availability, type PackageOption, type ProductOptions, availabilityLabels, packageHasDiscount } from '../../data/productOptions';
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { addDoc, collection, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
@@ -68,6 +68,7 @@ export default function ProductEditorModal({ product, duplicate = false, protect
   const editing = Boolean(product) && !duplicate;
   const duplicating = Boolean(product) && duplicate;
   const [archived, setArchived] = useState(duplicate ? false : product?.archived || false);
+  const [seasonal, setSeasonal] = useState(product?.seasonal || false);
   const [availability, setAvailability] = useState<Availability>(product?.availability || 'on_order');
   const [packages, setPackages] = useState<PackageOption[]>(product?.packages || []);
   const [name, setName] = useState(product?.name ?? '');
@@ -135,7 +136,7 @@ export default function ProductEditorModal({ product, duplicate = false, protect
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    const regularPrice = packages.length ? Math.min(...packages.map(effectivePackagePrice)) : normalizePrice(price);
+    const regularPrice = packages.length ? Math.min(...packages.map((option) => option.price)) : normalizePrice(price);
     const salePrice = normalizePrice(discountPrice);
     if (!category || !subcategory) {
       toast.error('Izaberite kategoriju i podkategoriju.');
@@ -179,7 +180,7 @@ export default function ProductEditorModal({ product, duplicate = false, protect
       }
 
       const savedProductData = {
-        archived, availability, packages: packages.map((option) => {
+        archived, seasonal, availability, packages: packages.map((option) => {
           const entry: PackageOption = { id: option.id, label: option.label.trim(), price: option.price, availability: option.availability };
           if (packageHasDiscount(option)) entry.discountPrice = option.discountPrice!;
           return entry;
@@ -238,6 +239,7 @@ export default function ProductEditorModal({ product, duplicate = false, protect
             <div className="product-editor__section-heading"><strong>Dostupnost i pakovanja</strong><span>Pakovanja imaju svoje cene; svako pakovanje može imati posebnu akcijsku cenu.</span></div>
             <label className="product-editor__field"><span>Dostupnost artikla</span><select value={availability} onChange={(event) => setAvailability(event.target.value as Availability)}>{Object.entries(availabilityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
             <label><input type="checkbox" checked={archived} onChange={(event) => setArchived(event.target.checked)} /> Arhiviraj artikal — sakrij iz prodavnice</label>
+            <label><input type="checkbox" checked={seasonal} onChange={(event) => setSeasonal(event.target.checked)} /> Prikaži u sekciji „Aktuelna sezonska ponuda“</label>
             {packages.map((option, index) => <div className="package-editor-row" key={option.id}>
               <label className="product-editor__field"><span>Pakovanje</span><input required value={option.label} onChange={(event) => setPackages(packages.map((entry, i) => i === index ? { ...entry, label: event.target.value } : entry))} /></label>
               <label className="product-editor__field"><span>Cena (RSD)</span><input required type="number" min="0.01" step="0.01" value={option.price || ''} onChange={(event) => setPackages(packages.map((entry, i) => i === index ? { ...entry, price: Number(event.target.value) } : entry))} /></label>

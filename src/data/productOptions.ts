@@ -1,6 +1,6 @@
 export type Availability = 'in_stock' | 'on_order' | 'out_of_stock';
 export type PackageOption = { id: string; label: string; price: number; discountPrice?: number; availability: Availability };
-export type ProductOptions = { archived?: boolean; availability?: Availability; packages?: PackageOption[] };
+export type ProductOptions = { archived?: boolean; seasonal?: boolean; availability?: Availability; packages?: PackageOption[] };
 export const availabilityLabels: Record<Availability, string> = {
   in_stock: 'Na stanju', on_order: 'Na upit', out_of_stock: 'Nema na stanju',
 };
@@ -20,7 +20,15 @@ export const productHasDiscount = (product: PricedProduct) =>
     ? product.packages.some(packageHasDiscount)
     : Boolean(product.onDiscount && product.discountPrice && product.discountPrice < product.price);
 
-export const effectivePrice = (product: PricedProduct, packageId?: string) => {
+// One entry per sale offer: each discounted package is listed as its own article.
+export const discountedOffers = <T extends PricedProduct>(products: T[]) =>
+  products.flatMap((product) =>
+    product.packages?.length
+      ? product.packages.filter(packageHasDiscount).map((option) => ({ product, packageOption: option as PackageOption | undefined }))
+      : productHasDiscount(product) ? [{ product, packageOption: undefined as PackageOption | undefined }] : []
+  );
+
+export const effectivePrice =(product: PricedProduct, packageId?: string) => {
   if (product.packages?.length) {
     if (packageId) {
       const selected = product.packages.find((option) => option.id === packageId);

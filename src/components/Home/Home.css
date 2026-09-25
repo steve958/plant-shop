@@ -544,7 +544,7 @@
 
 @media (min-width: 701px) {
   /* Slimmer banner on desktop; mobile keeps the full artwork. */
-  .shop-banner__image { height: clamp(340px, 36vw, 480px); object-fit: cover; object-position: center; }
+  .shop-banner__image { height: clamp(391px, 41.4vw, 552px); object-fit: cover; object-position: center; }
 }
 
 @media (min-width: 761px) {

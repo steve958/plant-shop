@@ -1,6 +1,6 @@
-import { type ProductOptions, availabilityLabels, effectivePackagePrice, packageHasDiscount } from '../../data/productOptions';
+import { type PackageOption, type ProductOptions, availabilityLabels, effectivePackagePrice, packageHasDiscount } from '../../data/productOptions';
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { useDispatch } from 'react-redux';
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
@@ -30,6 +30,8 @@ type Product = ProductOptions & {
 
 export default function ItemDetails() {
   const { productId } = useParams<{ productId: string }>();
+  const [searchParams] = useSearchParams();
+  const requestedPackageId = searchParams.get('pakovanje') || '';
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -63,7 +65,8 @@ export default function ItemDetails() {
           discountPrice: typeof data.discountPrice === 'number' ? data.discountPrice : null,
         });
         setSelectedImage(productImages[0] || null);
-        setPackageId(data.packages?.[0]?.id || '');
+        const packages: PackageOption[] = data.packages || [];
+        setPackageId((packages.find((option) => option.id === requestedPackageId) || packages[0])?.id || '');
       } catch (error) {
         console.error('Error fetching product details:', error);
       } finally {
@@ -71,7 +74,7 @@ export default function ItemDetails() {
       }
     };
     fetchProductDetails();
-  }, [productId]);
+  }, [productId, requestedPackageId]);
 
   const formatPrice = (price: number) => new Intl.NumberFormat('sr-RS', {
     style: 'currency', currency: 'RSD', minimumFractionDigits: 2, maximumFractionDigits: 2,
