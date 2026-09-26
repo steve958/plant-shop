@@ -5,6 +5,7 @@ import "./App.css";
 import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
 import { ToastContainer } from "react-toastify";
+import { Analytics } from "@vercel/analytics/react";
 import "react-toastify/dist/ReactToastify.css";
 import NavBar from "./components/NavBar/NavBar";
 import Loader from "./components/Loader/Loader";
@@ -58,6 +59,7 @@ function App() {
         style={{ marginTop: "100px" }} 
         limit={1}
       />
+      <Analytics />
     </div>
   );
 }
