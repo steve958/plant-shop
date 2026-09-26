@@ -101,7 +101,8 @@ export default function ItemDetails() {
   };
 
   return (
-    <main className="item-details-container">
+    // data-product-catalogue + aria-busy keep the route overlay (and scroll restore) waiting until the product loads.
+    <main className="item-details-container" data-product-catalogue aria-busy={loading}>
       {loading ? <Loader label="Učitavamo proizvod" /> : product ? (
         <div className="item-details-page">
           <nav className="product-breadcrumb" aria-label="Putanja">

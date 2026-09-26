@@ -21,6 +21,12 @@
   min-height: 460px;
 }
 
+/* While the route loader is up, fill the screen so the footer stays below the fold
+   instead of flashing under the short loader before the page renders. */
+.shop-route-stage[aria-busy="true"] {
+  min-height: 100vh;
+}
+
 input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
